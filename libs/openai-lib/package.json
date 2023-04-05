@@ -1,0 +1,9 @@
+{
+  "name": "@openai/openai-lib",
+  "version": "0.0.1",
+  "type": "commonjs",
+  "devDependencies": {
+    "@types/request-promise": "^4.1.48",
+    "@types/tunnel": "^0.0.3"
+  }
+}
