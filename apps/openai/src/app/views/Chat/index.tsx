@@ -60,9 +60,12 @@ export function Chat() {
     }
   );
 
-  // useEffect(()=> {
-  //   refetchChat()
-  // },[chat])
+  useEffect(()=> {
+    if(characters && !characterId){
+      setCharacter(characters[0].id)
+    }
+  },[characters, characterId])
+
 
   const [chats, setChats] = useState<
     { role: "user" | "assistant"; content: string; loading?: boolean }[]
