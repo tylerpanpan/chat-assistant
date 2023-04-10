@@ -17,4 +17,10 @@ export class Character {
 
   @ManyToOne(() => User)
   user: User;
+
+  @Property({ type: 'boolean', nullable: true, default: false })
+  isPublic: boolean;
+
+  @Property({ type: 'boolean', nullable: true, default: false })
+  isDefault: boolean;
 }

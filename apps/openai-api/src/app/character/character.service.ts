@@ -13,7 +13,11 @@ export class CharacterService {
   ) { }
 
   async getCharacters(user: User) {
-    return this.characterRepository.find({ user });
+    return this.characterRepository.find({ $or: [{
+      user
+    }, {
+      isDefault: true
+    }] }, { orderBy: { isDefault: 'desc', id: 'desc' } });
   }
 
   async createCharacter(user: User, name: string, definition: string) {
