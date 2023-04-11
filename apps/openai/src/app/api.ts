@@ -83,6 +83,10 @@ export class UserAPI extends BaseAPI {
     return this.post<{ access_token: string, user: any }>('/api/login', { username, password })
   }
 
+  register(username: string, password: string) {
+    return this.post<any>('/api/register', { username, password })
+  }
+
 }
 
 export class CharacterAPI extends BaseAPI {

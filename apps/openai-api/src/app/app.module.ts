@@ -11,6 +11,7 @@ import { AuthModule } from './auth/auth.module';
 import { CharacterModule } from './character/character.module';
 import { ChatModule } from './chat/chat.module';
 import { UserModule } from './user/user.module';
+import { ThrottlerModule } from '@nestjs/throttler'
 
 @Module({
   imports: [
@@ -21,6 +22,10 @@ import { UserModule } from './user/user.module';
         jwtConfig,
         systemConfig
       ]
+    }),
+    ThrottlerModule.forRoot({
+      ttl: 60,
+      limit: 20,
     }),
     MikroOrmModule.forRootAsync({
       imports: [ConfigModule],
@@ -48,4 +53,4 @@ import { UserModule } from './user/user.module';
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }

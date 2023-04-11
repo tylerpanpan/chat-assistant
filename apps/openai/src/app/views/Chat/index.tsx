@@ -46,7 +46,8 @@ export function Chat() {
 
   const { data: characters, refetch: refetchCharacter } = useQuery(
     ["character", token],
-    () => characterApi.getCharacters()
+    () => characterApi.getCharacters(),
+    {enabled: !!token}
   );
 
   const { data, refetch: refetchChat } = useQuery(
@@ -76,6 +77,7 @@ export function Chat() {
   );
 
   const handleChooseCharacter = (id: number) => () => {
+    setMobileOpen(false)
     setCharacter(id);
   };
 
@@ -171,7 +173,7 @@ export function Chat() {
 
   return (
     <>
-      <Box height="100vh" bgcolor={"#333"}>
+      <Box height="100%" bgcolor={"#333"}>
         <Stack direction="row" height="100%" width="100%">
           <Box
             component="nav"
