@@ -165,6 +165,22 @@ export function Chat() {
     });
   };
 
+  function copyToClipboard(text: string) {
+    const dummy = document.createElement("textarea")
+    document.body.appendChild(dummy)
+    dummy.value = text
+    dummy.select()
+    document.execCommand("copy")
+    document.body.removeChild(dummy)
+    showToast('已拷贝到剪贴板')
+  }
+
+  const copyText = (data: any) => {
+    if (data.role === 'assistant') {
+      data.content && copyToClipboard(data.content)
+    }
+  }
+
   useEffect(() => {
     if (chatEndRef.current) {
       chatEndRef.current.scrollTop = chatEndRef.current.scrollHeight;
@@ -290,6 +306,7 @@ export function Chat() {
                         mr={chat.role === "user" ? 0 : "auto"}
                         whiteSpace="pre-wrap"
                         letterSpacing={"1.2px"}
+                        onClick={() => copyText(chat)}
                       >
                         {chat.loading ? (
                           <Skeleton
