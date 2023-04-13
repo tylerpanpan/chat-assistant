@@ -244,7 +244,7 @@ export function Chat() {
                   <Typography variant="subtitle2">
                     {userInfo?.username || "未登录"}
                   </Typography>
-                  <Box>
+                  {/* <Box>
                     <Typography variant="caption">
                       {userInfo?.tokens} Token
                     </Typography>
@@ -255,7 +255,7 @@ export function Chat() {
                     >
                       充值
                     </Button>
-                  </Box>
+                  </Box> */}
                 </Box>
               )}
               {token && (
