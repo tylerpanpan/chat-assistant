@@ -25,4 +25,6 @@ export class User {
   @Property({ default: 1 })
   enable: boolean
 
+  @Property({ type: 'int', default: 0, nullable: true })
+  tokens: number
 }

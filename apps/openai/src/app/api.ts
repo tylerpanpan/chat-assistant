@@ -69,11 +69,13 @@ export class API extends BaseAPI {
   userApi: UserAPI;
   characterApi: CharacterAPI;
   chatApi: ChatAPI;
+  orderApi: OrderAPI;
   constructor(token?: string, host?: string, logout?: () => void) {
     super(axios, host)
     this.userApi = new UserAPI(axios, host, token, logout)
     this.characterApi = new CharacterAPI(axios, host, token, logout)
     this.chatApi = new ChatAPI(axios, host, token, logout)
+    this.orderApi = new OrderAPI(axios, host, token, logout)
   }
 }
 
@@ -85,6 +87,10 @@ export class UserAPI extends BaseAPI {
 
   register(username: string, password: string) {
     return this.post<any>('/api/register', { username, password })
+  }
+
+  userinfo() {
+    return this.get<{ username: string, email: string, tokens: number }>('/api/user/my')
   }
 
 }
@@ -119,9 +125,21 @@ export class ChatAPI extends BaseAPI {
     return this.post<any>(`/api/chat/${id}`, { text })
   }
 
-  clearMessage(id: string){
+  clearMessage(id: string) {
     return this.post<any>(`/api/chat/${id}/clear_message`, {})
   }
+}
+
+export class OrderAPI extends BaseAPI {
+
+  getOrders() {
+    return this.get<any>('/api/order')
+  }
+
+  createOrder(data: any) {
+    return this.post<string>('/api/order', data)
+  }
+
 }
 
 

@@ -50,11 +50,12 @@
       "options": {
         "buildTarget": "openai:build",
         "hmr": true,
-        "proxyConfig": "apps/openai/proxy.conf.json"
+        "proxyConfig": "apps/openai/proxy.conf.json",
       },
       "configurations": {
         "development": {
-          "buildTarget": "openai:build:development"
+          "buildTarget": "openai:build:development",
+          "host": "0.0.0.0"
         },
         "production": {
           "buildTarget": "openai:build:production",
