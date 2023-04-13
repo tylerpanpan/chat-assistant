@@ -42,7 +42,7 @@ export class UserService {
   }
 
   findOne(id: number) {
-    return this.userRepo.findOne({ id });
+    return this.userRepo.findOne({ id }, { fields: ['email', 'id', 'tokens', 'username'] });
   }
 
   findOneBy(where: FilterQuery<User>) {

@@ -18,9 +18,8 @@ export class UserController {
   }
 
   @Get('/my')
-  my(@Request() req: any) {
-    const user = req.user
-    return this.userService.findOne(user.userId);
+  my(@Request() { user }) {
+    return this.userService.findOne(user.id);
   }
 
   @Get()
