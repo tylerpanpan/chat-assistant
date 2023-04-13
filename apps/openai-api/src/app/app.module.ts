@@ -12,6 +12,8 @@ import { CharacterModule } from './character/character.module';
 import { ChatModule } from './chat/chat.module';
 import { UserModule } from './user/user.module';
 import { ThrottlerModule } from '@nestjs/throttler'
+import alipayConfig from '../config/alipay.config';
+import { OrderModule } from './order/order.module';
 
 @Module({
   imports: [
@@ -20,7 +22,8 @@ import { ThrottlerModule } from '@nestjs/throttler'
       load: [
         databaseConfig,
         jwtConfig,
-        systemConfig
+        systemConfig,
+        alipayConfig
       ]
     }),
     ThrottlerModule.forRoot({
@@ -48,7 +51,8 @@ import { ThrottlerModule } from '@nestjs/throttler'
     AuthModule,
     UserModule,
     CharacterModule,
-    ChatModule
+    ChatModule,
+    OrderModule
   ],
   controllers: [AppController],
   providers: [AppService],

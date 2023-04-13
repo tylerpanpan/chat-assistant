@@ -10,8 +10,9 @@ import {
   Drawer,
   AppBar,
   Toolbar,
+  useMediaQuery,
 } from "@mui/material";
-import { Box, Stack } from "@mui/system";
+import { Box, Stack, useTheme } from "@mui/system";
 import SendIcon from "@mui/icons-material/Send";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -23,18 +24,29 @@ import { useFeedback } from "../../components/Feedback";
 import { CharacterList } from "./components/CharacterList";
 import MenuIcon from "@mui/icons-material/Menu";
 import MenuOpenIcon from "@mui/icons-material/MenuOpen";
+import ExitToAppIcon from "@mui/icons-material/ExitToApp";
 
 const drawerWidth = 320;
 
 export function Chat() {
-  const { characterApi, chatApi } = useAPI();
+  const { characterApi, chatApi, userApi, orderApi } = useAPI();
   const [characterId, setCharacter] = useState<null | number>();
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
-  const { token, showLogin } = useAuth();
+  const { token, showLogin, logout } = useAuth();
   const { showDialog, showToast } = useFeedback();
   const chatEndRef = useRef<HTMLDivElement>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
+  const { data: userInfo } = useQuery(
+    ["userinfo", token],
+    () => userApi.userinfo(),
+    {
+      enabled: !!token,
+    }
+  );
 
   const { data: chat } = useQuery(
     ["chat/last", token, characterId],
@@ -47,7 +59,7 @@ export function Chat() {
   const { data: characters, refetch: refetchCharacter } = useQuery(
     ["character", token],
     () => characterApi.getCharacters(),
-    {enabled: !!token}
+    { enabled: !!token }
   );
 
   const { data, refetch: refetchChat } = useQuery(
@@ -61,12 +73,11 @@ export function Chat() {
     }
   );
 
-  useEffect(()=> {
-    if(characters && !characterId){
-      setCharacter(characters[0].id)
+  useEffect(() => {
+    if (characters && !characterId) {
+      setCharacter(characters[0].id);
     }
-  },[characters, characterId])
-
+  }, [characters, characterId]);
 
   const [chats, setChats] = useState<
     { role: "user" | "assistant"; content: string; loading?: boolean }[]
@@ -77,7 +88,7 @@ export function Chat() {
   );
 
   const handleChooseCharacter = (id: number) => () => {
-    setMobileOpen(false)
+    setMobileOpen(false);
     setCharacter(id);
   };
 
@@ -180,12 +191,91 @@ export function Chat() {
       data.content && copyToClipboard(data.content)
     }
   }
+  
+  const handleRecharge = () => {
+    if (!token) {
+      showLogin();
+      return;
+    }
+    orderApi
+      .createOrder({ tokens: 10000, mobile: isMobile ? 1 : 0 })
+      .then((res) => {
+        let divForm = document.getElementsByTagName("divform");
+        if (divForm.length) {
+          document.body.removeChild(divForm[0]);
+        }
+        const div = document.createElement("divform");
+        div.innerHTML = res;
+        document.body.appendChild(div);
+        div.getElementsByTagName("form")[0].submit();
+      });
+  };
+
+  const handleLogout = () => {
+    if (!token) {
+      showLogin();
+      return;
+    }
+    showDialog("确定要退出登录吗?", "退出登录", "取消", "确定", (confirm) => {
+      if (confirm == 1) {
+        logout();
+      }
+    });
+  };
 
   useEffect(() => {
     if (chatEndRef.current) {
       chatEndRef.current.scrollTop = chatEndRef.current.scrollHeight;
     }
   }, [chats, chatEndRef]);
+
+  const DrawerContent = () => {
+    return (
+      <Box width={drawerWidth} p={1.5} height="100%">
+        <Stack direction={"column"} sx={{ height: "100%" }}>
+          <Box height="60px" mb={1} color="#fff">
+            <Stack
+              justifyContent="space-between"
+              direction="row"
+              alignItems="center"
+            >
+              {token && (
+                <Box>
+                  <Typography variant="subtitle2">
+                    {userInfo?.username || "未登录"}
+                  </Typography>
+                  <Box>
+                    <Typography variant="caption">
+                      {userInfo?.tokens} Token
+                    </Typography>
+                    <Button
+                      onClick={handleRecharge}
+                      sx={{ alignSelf: "center" }}
+                      size="small"
+                    >
+                      充值
+                    </Button>
+                  </Box>
+                </Box>
+              )}
+              {token && (
+                <IconButton onClick={handleLogout}>
+                  <ExitToAppIcon htmlColor="#fff" />
+                </IconButton>
+              )}
+            </Stack>
+          </Box>
+          <Divider variant="fullWidth" light sx={{ marginBottom: "10px" }} />
+          <CharacterList
+            characterId={characterId}
+            characters={characters}
+            handleChooseCharacter={handleChooseCharacter}
+            handleCreateCharacter={handleCreateCharacter}
+          />
+        </Stack>
+      </Box>
+    );
+  };
 
   return (
     <>
@@ -214,14 +304,7 @@ export function Chat() {
                 keepMounted: true, // Better open performance on mobile.
               }}
             >
-              <Box width={drawerWidth} p={1.5} height="100%">
-                <CharacterList
-                  characterId={characterId}
-                  characters={characters}
-                  handleChooseCharacter={handleChooseCharacter}
-                  handleCreateCharacter={handleCreateCharacter}
-                />
-              </Box>
+              <DrawerContent />
             </Drawer>
             <Drawer
               variant="permanent"
@@ -235,14 +318,7 @@ export function Chat() {
               }}
               open
             >
-              <Box width={drawerWidth} p={1.5} height="100%">
-                <CharacterList
-                  characterId={characterId}
-                  characters={characters}
-                  handleChooseCharacter={handleChooseCharacter}
-                  handleCreateCharacter={handleCreateCharacter}
-                />
-              </Box>
+              <DrawerContent />
             </Drawer>
           </Box>
           <Box
