@@ -6,6 +6,7 @@ import { Order, OrderStatus } from "./order.entity";
 import AlipaySdk from 'alipay-sdk';
 import moment from 'moment';
 import { readFileSync } from "fs";
+import { User } from "../user/entities/user.entity";
 
 @Injectable()
 export class OrderService {
@@ -64,12 +65,18 @@ export class OrderService {
   async completeOrder(orderNo: string, payData: any) {
     const order = await this.orderRepo.findOne({ orderNo }, { populate: ['user'] });
     if (!order) throw new HttpException('订单不存在', 404);
+    if (order.status !== OrderStatus.Pending) throw new HttpException('订单状态不正确', 400);
     //offer the amount to the user
-    order.user.balance += order.amount;
     order.status = OrderStatus.Paid;
     order.payData = payData;
     order.paidAt = new Date();
     await this.orderRepo.persistAndFlush(order);
+
+    const userRepo =  this.em.getRepository(User);
+    const user = await userRepo.findOne({id: order.user.id})
+    user.balance = +user.balance + order.amount;
+  
+    await userRepo.flush();
   }
 
 }

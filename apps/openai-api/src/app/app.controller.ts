@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpException, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpException, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AuthGuard } from '@nestjs/passport';
 import { Throttle } from '@nestjs/throttler';
@@ -53,7 +53,7 @@ export class AppController {
   }
 
   @Post('alipay_notify')
-  async alipayNotify(@Body() body: any) {
+  async alipayNotify(@Body() body: any, @Query() query: any) {
     console.info(body)
     if (this.alipaySdk.checkNotifySign(body)) {
       if (body.trade_status === 'TRADE_SUCCESS') {
