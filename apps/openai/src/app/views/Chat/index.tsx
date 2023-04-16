@@ -242,13 +242,13 @@ export function Chat() {
                     <Typography variant="caption">
                       余额: {userInfo?.balance} 元
                     </Typography>
-                    {/* <Button
+                    <Button
                       onClick={()=> setRechargeModalOpen(true)}
                       sx={{ alignSelf: "center" }}
                       size="small"
                     >
                       充值
-                    </Button> */}
+                    </Button>
                   </Box>
                 </Box>
               )}

@@ -53,9 +53,9 @@ export class ChatService {
     const u = await userRepo.findOne({ id: user.id })
 
 
-    // if (u.balance <= 0) {
-    //   throw new HttpException('You have no tokens left', 402)
-    // }
+    if (u.balance <= 0) {
+      throw new HttpException('You have no tokens left', 402)
+    }
 
     const chat = await this.chatRepo.findOne(chatId, { populate: ['character'] })
 

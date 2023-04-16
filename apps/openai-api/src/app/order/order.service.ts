@@ -44,6 +44,7 @@ export class OrderService {
     const alipayUrl = this.alipaySdk.pageExec(isMobile ? 'alipay.trade.wap.pay' : 'alipay.trade.page.pay', {
       bizContent: alipayParams,
       notify_url: this.configService.get('alipay.notifyUrl'),
+      return_url: this.configService.get('alipay.returnUrl'),
     })
     return alipayUrl;
   }
