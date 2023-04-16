@@ -61,9 +61,11 @@ export class AppController {
         await this.orderService.completeOrder(out_trade_no, body)
         return { 'success': true };
       } else {
+        console.info('订单状态不正确')
         throw new HttpException('订单状态不正确', 400);
       }
     } else {
+      console.info('签名错误')
       throw new HttpException('签名错误', 400);
     }
   }

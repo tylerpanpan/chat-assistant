@@ -25,18 +25,18 @@ export class OrderService {
   }
 
 
-  async createOrder(user: any, tokens: number, isMobile: boolean) {
+  async createOrder(user: any, amount: number, isMobile: boolean) {
     const order = new Order();
     order.user = user;
-    order.tokens = tokens;
-    order.amount = tokens / 1000 * 0.1;
+    order.tokens = 0;
+    order.amount = amount;
     order.status = OrderStatus.Pending;
     order.orderNo = this.generateOrderNo();
     await this.orderRepo.persistAndFlush(order);
     const alipayParams = {
       out_trade_no: order.orderNo,
       total_amount: order.amount,
-      subject: `智能聊天助手Token充值(${tokens} Tokens)`,
+      subject: `智能聊天助手充值`,
       product_code: isMobile ? 'QUICK_WAP_WAY' : 'FAST_INSTANT_TRADE_PAY',
     };
 
@@ -64,8 +64,8 @@ export class OrderService {
   async completeOrder(orderNo: string, payData: any) {
     const order = await this.orderRepo.findOne({ orderNo }, { populate: ['user'] });
     if (!order) throw new HttpException('订单不存在', 404);
-    //offer the tokens to the user
-    order.user.tokens += order.tokens;
+    //offer the amount to the user
+    order.user.balance += order.amount;
     order.status = OrderStatus.Paid;
     order.payData = payData;
     order.paidAt = new Date();

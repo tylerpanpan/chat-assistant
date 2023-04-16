@@ -1,0 +1,112 @@
+import {
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogProps,
+  DialogTitle,
+  Paper,
+  Typography,
+  useMediaQuery,
+  useTheme,
+} from "@mui/material";
+import { Stack } from "@mui/system";
+import { useState } from "react";
+import useAPI from "../../hooks/useAPI";
+import { useFeedback } from "../Feedback";
+
+const prices = [
+  {
+    chats: 140,
+    amount: 10,
+  },
+  {
+    chats: 700,
+    amount: 50,
+  },
+  {
+    chats: 1400,
+    amount: 100,
+  },
+  {
+    chats: 7000,
+    amount: 500,
+  },
+];
+
+export function RechargeModal({ ...props }: DialogProps) {
+  const { orderApi } = useAPI();
+  const { showToast } = useFeedback();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const [amount, setAmount] = useState(10);
+
+  const handleRecharge = () => {
+    orderApi.createOrder({ amount, mobile: isMobile ? 1 : 0 }).then((res) => {
+      let divForm = document.getElementsByTagName("divform");
+      if (divForm.length) {
+        document.body.removeChild(divForm[0]);
+      }
+      const div = document.createElement("divform");
+      div.innerHTML = res;
+      document.body.appendChild(div);
+      div.getElementsByTagName("form")[0].submit();
+    });
+  };
+
+  return (
+    <Dialog {...props}>
+      <DialogTitle>充值</DialogTitle>
+      <DialogContent>
+        <Box p={1.5} width="100%">
+          <Stack
+            width="100%"
+            spacing={2}
+            direction="row"
+            flexWrap="wrap"
+            useFlexGap
+          >
+            {prices.map((item) => {
+              return (
+                <Paper
+                  key={item.amount}
+                  elevation={0}
+                  sx={{
+                    width: {
+                      xs: "100%",
+                      md: "calc(50% - 10px)",
+                    },
+                    border: amount === item.amount ? "2px solid #000" : "none",
+                    cursor: "pointer",
+                  }}
+                  onClick={() => setAmount(item.amount)}
+                >
+                  <Box p={2} bgcolor="#e1e1e1">
+                    <Typography variant="subtitle1" display="block">
+                      {item.amount} 元
+                    </Typography>
+
+                    <Typography variant="caption" color="#666" display="block">
+                      ≈ {item.chats}次问答
+                    </Typography>
+                  </Box>
+                </Paper>
+              );
+            })}
+          </Stack>
+        </Box>
+      </DialogContent>
+      <DialogActions>
+        <Button
+          sx={{ marginTop: "20px" }}
+          variant="contained"
+          fullWidth
+          onClick={handleRecharge}
+        >
+          充值
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
