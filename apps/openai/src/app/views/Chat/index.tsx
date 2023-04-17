@@ -31,7 +31,8 @@ const drawerWidth = 320;
 
 export function Chat() {
   const { characterApi, chatApi, userApi, orderApi } = useAPI();
-  const [characterId, setCharacter] = useState<null | number>();
+  const [characterId, setCharacterId] = useState<null | number>();
+  const [curCharacter, setCurCharacter] = useState<any>();
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const { token, showLogin, logout } = useAuth();
@@ -76,7 +77,8 @@ export function Chat() {
 
   useEffect(() => {
     if (characters && !characterId) {
-      setCharacter(characters[0].id);
+      setCharacterId(characters[0].id);
+      setCurCharacter(characters[0])
     }
   }, [characters, characterId]);
 
@@ -90,8 +92,27 @@ export function Chat() {
 
   const handleChooseCharacter = (id: number) => () => {
     setMobileOpen(false);
-    setCharacter(id);
+    setCharacterId(id);
   };
+
+  const handleEditCharacter = (id: number) => () => {
+    const idx = characters.findIndex((item: any) => item.id === id);
+    idx !== -1 && setCurCharacter(characters[idx])
+    setShowCreateCharacterModal(true);
+  }
+
+  const handleDeleteCharacter = (id: number) => () => {
+    characterApi
+      .deleteCharacter(`${id}`)
+      .then(() => {
+        showToast('删除成功');
+        if (id === characterId) {
+          setCharacterId(null);
+          setCurCharacter(null);
+        }
+        refetchCharacter();
+      })
+  }
 
   const handleSend = () => {
     if (!text) {
@@ -167,6 +188,7 @@ export function Chat() {
       showLogin();
       return;
     }
+    setCurCharacter(null)
     setShowCreateCharacterModal(true);
   };
 
@@ -265,6 +287,8 @@ export function Chat() {
             characters={characters}
             handleChooseCharacter={handleChooseCharacter}
             handleCreateCharacter={handleCreateCharacter}
+            handleEditCharacter={handleEditCharacter}
+            handleDeleteCharacter={handleDeleteCharacter}
           />
         </Stack>
       </Box>
@@ -449,6 +473,7 @@ export function Chat() {
         </Stack>
         <CreateCharacterModal
           open={showCreateCharacterModal}
+          character={curCharacter}
           onCreated={handleCharacterCreated}
           onClose={() => setShowCreateCharacterModal(false)}
         />

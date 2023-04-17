@@ -51,6 +51,21 @@ class BaseAPI {
     })
   }
 
+  async patch<T>(uri: string, data: Record<string, any>, params?: Record<string, any>, json?: boolean, config?: AxiosRequestConfig) {
+    const token = this.token || localStorage.getItem('__app_token')
+
+    const headers = token ? { Authorization: `Bearer ${token}` } : { Token: '' }
+    return this.instance.patch<T>(`${this.host}${uri}`, json ? data : qs.stringify(data), {
+      params,
+      ...config,
+      headers: {
+        ...headers,
+      },
+    }).then(res => {
+      return res.data
+    })
+  }
+
   async delete<T>(uri: string, data: Record<string, any>, params?: Record<string, any>, config?: AxiosRequestConfig) {
     const token = this.token || localStorage.getItem('__app_token')
 
@@ -103,6 +118,10 @@ export class CharacterAPI extends BaseAPI {
 
   createCharacter(data: any) {
     return this.post<any>('/api/character', data)
+  }
+
+  editCharacter(id: string, data: any) {
+    return this.patch<any>(`/api/character/${id}`, data)
   }
 
   deleteCharacter(id: string) {

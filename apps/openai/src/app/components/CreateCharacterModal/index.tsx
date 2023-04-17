@@ -7,14 +7,16 @@ import {
   DialogTitle,
   TextField,
 } from '@mui/material';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import useAPI from '../../hooks/useAPI';
 import { useFeedback } from '../Feedback';
 interface CreateCharacterModalProps extends DialogProps {
+  character?: any;
   onCreated?: () => void;
 }
 
 export function CreateCharacterModal({
+  character,
   onCreated,
   ...props
 }: CreateCharacterModalProps) {
@@ -30,15 +32,40 @@ export function CreateCharacterModal({
         setName('');
         setDefinition('');
         onCreated?.();
+        showToast('角色创建成功')
       })
       .catch((e) => {
         showToast(e.message, 1);
       });
   };
 
+  const handleSaveCharacter = () => {
+    characterApi
+      .editCharacter(character.id, { name, definition })
+      .then(() => {
+        setName('');
+        setDefinition('');
+        onCreated?.();
+        showToast('角色保存成功')
+      })
+      .catch((e) => {
+        showToast(e.message, 1);
+      });
+  }
+
+  useEffect(() => {
+    if (character) {
+      setName(character.name);
+      setDefinition(character.definition);
+    } else {
+      setName('');
+      setDefinition('');
+    }
+  }, [character])
+
   return (
     <Dialog {...props}>
-      <DialogTitle>创建角色</DialogTitle>
+      <DialogTitle>{character?.name ? '角色编辑' : '创建角色'}</DialogTitle>
       <DialogContent>
         <Box p={1.5}>
           <TextField
@@ -62,9 +89,9 @@ export function CreateCharacterModal({
             sx={{ marginTop: '20px' }}
             variant="contained"
             fullWidth
-            onClick={handleCreateCharacter}
+            onClick={character?.name ? handleSaveCharacter : handleCreateCharacter}
           >
-            创建
+            {character?.name ? '保存' : '创建'}
           </Button>
         </Box>
       </DialogContent>
