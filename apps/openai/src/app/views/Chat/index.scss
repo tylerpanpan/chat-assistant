@@ -33,4 +33,28 @@
 	.katex {
 		font-size: 1.5em;
 	}
+
+	table {
+		width: 100%;
+		border-top: 1px solid #ddd;
+		border-left: 1px solid #ddd;
+		margin-top: 10px;
+		margin-bottom: 10px;
+		thead {
+			th {
+				border-bottom: 1px solid #ddd;
+				border-right: 1px solid #ddd;
+				background: #eee;
+				padding: 5px 10px;
+				text-align: left;
+			}
+		}
+		tbody {
+			td {
+				border-bottom: 1px solid #ddd;
+				border-right: 1px solid #ddd;
+				padding: 5px 10px;
+			}
+		}
+	}
 }
