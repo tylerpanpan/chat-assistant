@@ -191,7 +191,7 @@ export function Chat() {
   function copyToClipboard(text: string) {
     const dummy = document.createElement("textarea");
     document.body.appendChild(dummy);
-    dummy.value = text;
+    dummy.value = text + `\n网站链接：https://grzl.ai`;
     dummy.select();
     document.execCommand("copy");
     document.body.removeChild(dummy);
