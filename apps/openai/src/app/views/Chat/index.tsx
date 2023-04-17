@@ -30,6 +30,7 @@ import MarkdownIt from "markdown-it";
 import mdKatex from "@traptitech/markdown-it-katex";
 import mila from "markdown-it-link-attributes";
 import hljs from "highlight.js";
+import "katex/dist/katex.css";
 import "highlight.js/styles/atom-one-dark.css";
 import './index.scss';
 
