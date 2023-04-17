@@ -26,8 +26,33 @@ import MenuIcon from "@mui/icons-material/Menu";
 import MenuOpenIcon from "@mui/icons-material/MenuOpen";
 import ExitToAppIcon from "@mui/icons-material/ExitToApp";
 import { RechargeModal } from "../../components/RechargeModal";
+import MarkdownIt from "markdown-it";
+import mdKatex from "@traptitech/markdown-it-katex";
+import mila from "markdown-it-link-attributes";
+import hljs from "highlight.js";
+import "highlight.js/styles/atom-one-dark.css";
+import './index.scss';
 
 const drawerWidth = 320;
+
+function highlightBlock(str: string, lang?: string) {
+  return `<pre class="code-block-wrapper"><code class="hljs code-block-body ${lang}">${str}</code></pre>`
+}
+
+const mdi = new MarkdownIt({
+  linkify: true,
+  highlight(code, language) {
+    const validLang = !!(language && hljs.getLanguage(language))
+    if (validLang) {
+      const lang = language ?? ''
+      return highlightBlock(hljs.highlight(code, { language: lang }).value, lang)
+    }
+    return highlightBlock(hljs.highlightAuto(code).value, '')
+  },
+})
+
+mdi.use(mila, { attrs: { target: '_blank', rel: 'noopener' } })
+mdi.use(mdKatex, { blockClass: 'katexmath-block rounded-md p-[10px]', errorColor: ' #cc0000' })
 
 export function Chat() {
   const { characterApi, chatApi, userApi, orderApi } = useAPI();
@@ -404,8 +429,7 @@ export function Chat() {
                         mb={1}
                         mt={1}
                         ml={chat.role === "user" ? "auto" : 0}
-                        mr={chat.role === "user" ? 0 : "auto"}
-                        whiteSpace="pre-wrap"
+                        mr={chat.role === "user" ? 0 : "15%"}
                         letterSpacing={"1.2px"}
                         onClick={() => copyText(chat)}
                       >
@@ -417,7 +441,7 @@ export function Chat() {
                             }}
                           ></Skeleton>
                         ) : (
-                          chat.content
+                          <Box className="chat-box" dangerouslySetInnerHTML={{__html: mdi.render(chat.content)}}></Box>
                         )}
                       </Box>
                     );
