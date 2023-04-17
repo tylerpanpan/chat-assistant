@@ -1,12 +1,10 @@
 import { Body, Controller, Get, Param, Post, Query, Req, UseGuards } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
-import { Request } from "express";
 import { ChatService } from "./chat.service";
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('chat')
 export class ChatController {
-
 
   constructor(private chatService: ChatService) {
 

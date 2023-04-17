@@ -27,4 +27,7 @@ export class User {
 
   @Property({ type: 'int', default: 0, nullable: true })
   tokens: number
+
+  @Property({ type: 'decimal',scale: 8,precision: 2, default: 0, nullable: true })
+  balance: number
 }

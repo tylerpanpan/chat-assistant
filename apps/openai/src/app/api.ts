@@ -90,7 +90,7 @@ export class UserAPI extends BaseAPI {
   }
 
   userinfo() {
-    return this.get<{ username: string, email: string, tokens: number }>('/api/user/my')
+    return this.get<{ username: string, email: string, tokens: number,balance: number }>('/api/user/my')
   }
 
 }

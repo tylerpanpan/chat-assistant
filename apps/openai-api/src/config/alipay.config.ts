@@ -5,4 +5,5 @@ export default registerAs('alipay', () => ({
   privateKey: process.env.ALIPAY_PRIVATE_KEY,
   publicKey: process.env.ALIPAY_PUBLIC_KEY,
   notifyUrl: process.env.ALIPAY_NOTIFY_URL,
+  returnUrl: process.env.ALIPAY_RETURN_URL,
 }));

@@ -10,12 +10,11 @@ export class OrderController {
 
   @Post()
   create(
-    @Body() { tokens, mobile }: { tokens: number, mobile: number },
+    @Body() { amount, mobile }: { amount: number, mobile: number },
     @Req() { user }
 
   ) {
-
-    return this.orderService.createOrder(user, +tokens, !!+mobile);
+    return this.orderService.createOrder(user, +amount, !!+mobile);
   }
 
   @Get()

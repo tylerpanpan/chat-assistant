@@ -25,6 +25,7 @@ import { CharacterList } from "./components/CharacterList";
 import MenuIcon from "@mui/icons-material/Menu";
 import MenuOpenIcon from "@mui/icons-material/MenuOpen";
 import ExitToAppIcon from "@mui/icons-material/ExitToApp";
+import { RechargeModal } from "../../components/RechargeModal";
 
 const drawerWidth = 320;
 
@@ -37,8 +38,8 @@ export function Chat() {
   const { showDialog, showToast } = useFeedback();
   const chatEndRef = useRef<HTMLDivElement>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const [rechargeModalOpen, setRechargeModalOpen] = useState(false);
+
 
   const { data: userInfo } = useQuery(
     ["userinfo", token],
@@ -80,7 +81,7 @@ export function Chat() {
   }, [characters, characterId]);
 
   const [chats, setChats] = useState<
-    { role: "user" | "assistant"; content: string; loading?: boolean }[]
+    { role: "user" | "assistant" | "recharge"; content: string; loading?: boolean }[]
   >([]);
 
   const currentCharacter = characters?.find(
@@ -135,7 +136,18 @@ export function Chat() {
       })
       .catch((e) => {
         setSending(false);
-        showToast(e.message);
+        console.info(e.response)
+        if (e.response.status === 402) {
+          setChats([
+            {
+              'role': 'recharge',
+              'content': 'Tokens不足，请充值',
+            },
+            ...chats
+          ])
+        } else {
+          showToast(e.message);
+        }
       });
   };
 
@@ -177,39 +189,21 @@ export function Chat() {
   };
 
   function copyToClipboard(text: string) {
-    const dummy = document.createElement("textarea")
-    document.body.appendChild(dummy)
-    dummy.value = text
-    dummy.select()
-    document.execCommand("copy")
-    document.body.removeChild(dummy)
-    showToast('已拷贝到剪贴板')
+    const dummy = document.createElement("textarea");
+    document.body.appendChild(dummy);
+    dummy.value = text;
+    dummy.select();
+    document.execCommand("copy");
+    document.body.removeChild(dummy);
+    showToast("已拷贝到剪贴板");
   }
 
   const copyText = (data: any) => {
-    if (data.role === 'assistant') {
-      data.content && copyToClipboard(data.content)
+    if (data.role === "assistant") {
+      data.content && copyToClipboard(data.content);
     }
-  }
-  
-  const handleRecharge = () => {
-    if (!token) {
-      showLogin();
-      return;
-    }
-    orderApi
-      .createOrder({ tokens: 10000, mobile: isMobile ? 1 : 0 })
-      .then((res) => {
-        let divForm = document.getElementsByTagName("divform");
-        if (divForm.length) {
-          document.body.removeChild(divForm[0]);
-        }
-        const div = document.createElement("divform");
-        div.innerHTML = res;
-        document.body.appendChild(div);
-        div.getElementsByTagName("form")[0].submit();
-      });
   };
+
 
   const handleLogout = () => {
     if (!token) {
@@ -246,10 +240,10 @@ export function Chat() {
                   </Typography>
                   <Box>
                     <Typography variant="caption">
-                      {userInfo?.tokens} Token
+                      余额: {userInfo?.balance} 元
                     </Typography>
                     <Button
-                      onClick={handleRecharge}
+                      onClick={()=> setRechargeModalOpen(true)}
                       sx={{ alignSelf: "center" }}
                       size="small"
                     >
@@ -367,6 +361,13 @@ export function Chat() {
               <Box height="100%" overflow={"scroll"} ref={chatEndRef}>
                 <Stack direction="column-reverse">
                   {chats?.map((chat, index: number) => {
+                    if(chat.role === 'recharge'){
+                      return (
+                        <Box  color="#fff" display="flex" justifyContent="center" alignItems="center" p={2}>
+                          余额不足，请前往<Button onClick={()=> setRechargeModalOpen(true)} style={{fontSize: '18px'}}>充值</Button>
+                        </Box>
+                      )
+                    }
                     return (
                       <Box
                         key={index}
@@ -451,6 +452,7 @@ export function Chat() {
           onCreated={handleCharacterCreated}
           onClose={() => setShowCreateCharacterModal(false)}
         />
+        <RechargeModal open={rechargeModalOpen} onClose={()=> setRechargeModalOpen(false)}/>
       </Box>
     </>
   );

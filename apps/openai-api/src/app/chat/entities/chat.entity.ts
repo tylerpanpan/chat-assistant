@@ -18,4 +18,6 @@ export class Chat {
   @Property({ type: 'json' })
   messages: Message[] = []
 
+  @Property({type: 'int', nullable: true})
+  totalTokens: number;
 }
