@@ -13,8 +13,10 @@ import moment from 'moment';
 import { readFileSync } from "fs";
 import { HttpErrorByCode } from '@nestjs/common/utils/http-error-by-code.util';
 import { OrderStatus } from './order/order.entity';
+import { ApiTags } from '@nestjs/swagger';
 
 @Controller()
+@ApiTags('app')
 export class AppController {
   alipaySdk: AlipaySdk;
 

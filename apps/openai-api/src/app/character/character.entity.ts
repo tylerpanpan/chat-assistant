@@ -23,4 +23,10 @@ export class Character {
 
   @Property({ type: 'boolean', nullable: true, default: false })
   isDefault: boolean;
+
+  @Property({ nullable: true })
+  welcome: string;
+
+  @Property({ nullable: true, type: 'json' })
+  presetQuestions: string[] = []
 }
