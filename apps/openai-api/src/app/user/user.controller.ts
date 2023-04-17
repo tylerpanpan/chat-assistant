@@ -6,9 +6,11 @@ import { GoogleAuthDto } from './dto/google-auth.dto';
 import { Role, Roles } from '../role/role.decorator';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from '../guards/roles.guard';
+import { ApiTags } from '@nestjs/swagger';
 
 @UseGuards(AuthGuard('jwt'), RolesGuard)
 @Controller('user')
+@ApiTags('user')
 export class UserController {
   constructor(private readonly userService: UserService) { }
 
