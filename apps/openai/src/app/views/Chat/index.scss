@@ -2,9 +2,13 @@
 	background-color: transparent;
 	font-size: 16px;
 	position: relative;
+	overflow: auto;
 	p {
         margin: 0;
 		white-space: pre-wrap;
+		a {
+			word-break: break-all;
+		}
 	}
 
 	ol {
@@ -40,6 +44,7 @@
 		border-left: 1px solid #ddd;
 		margin-top: 10px;
 		margin-bottom: 10px;
+		border-collapse: collapse;
 		thead {
 			th {
 				border-bottom: 1px solid #ddd;

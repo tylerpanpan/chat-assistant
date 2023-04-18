@@ -59,7 +59,7 @@ export function RechargeModal({ ...props }: DialogProps) {
     <Dialog {...props}>
       <DialogTitle>充值</DialogTitle>
       <DialogContent>
-        <Box p={1.5} width="100%">
+        <Box py={1} width="100%">
           <Stack
             width="100%"
             spacing={2}
@@ -77,12 +77,12 @@ export function RechargeModal({ ...props }: DialogProps) {
                       xs: "100%",
                       md: "calc(50% - 10px)",
                     },
-                    border: amount === item.amount ? "2px solid #000" : "none",
+                    border: amount === item.amount ? "2px solid #1d93ab" : "2px solid #e5e5e5",
                     cursor: "pointer",
                   }}
                   onClick={() => setAmount(item.amount)}
                 >
-                  <Box p={2} bgcolor="#e1e1e1">
+                  <Box p={2} bgcolor="#f3f3f3">
                     <Typography variant="subtitle1" display="block">
                       {item.amount} 元
                     </Typography>
@@ -99,7 +99,7 @@ export function RechargeModal({ ...props }: DialogProps) {
       </DialogContent>
       <DialogActions>
         <Button
-          sx={{ marginTop: "20px" }}
+          sx={{ margin: "10px 15px" }}
           variant="contained"
           fullWidth
           onClick={handleRecharge}
