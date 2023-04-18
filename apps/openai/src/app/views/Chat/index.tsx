@@ -26,12 +26,39 @@ import MenuIcon from "@mui/icons-material/Menu";
 import MenuOpenIcon from "@mui/icons-material/MenuOpen";
 import ExitToAppIcon from "@mui/icons-material/ExitToApp";
 import { RechargeModal } from "../../components/RechargeModal";
+import MarkdownIt from "markdown-it";
+import mdKatex from "@traptitech/markdown-it-katex";
+import mila from "markdown-it-link-attributes";
+import hljs from "highlight.js";
+import "katex/dist/katex.css";
+import "highlight.js/styles/atom-one-dark.css";
+import './index.scss';
 
 const drawerWidth = 320;
 
+function highlightBlock(str: string, lang?: string) {
+  return `<pre class="code-block-wrapper"><code class="hljs code-block-body ${lang}">${str}</code></pre>`
+}
+
+const mdi = new MarkdownIt({
+  linkify: true,
+  highlight(code, language) {
+    const validLang = !!(language && hljs.getLanguage(language))
+    if (validLang) {
+      const lang = language ?? ''
+      return highlightBlock(hljs.highlight(code, { language: lang }).value, lang)
+    }
+    return highlightBlock(hljs.highlightAuto(code).value, '')
+  },
+})
+
+mdi.use(mila, { attrs: { target: '_blank', rel: 'noopener' } })
+mdi.use(mdKatex, { blockClass: 'katexmath-block rounded-md p-[10px]', errorColor: ' #cc0000' })
+
 export function Chat() {
   const { characterApi, chatApi, userApi, orderApi } = useAPI();
-  const [characterId, setCharacter] = useState<null | number>();
+  const [characterId, setCharacterId] = useState<null | number>();
+  const [curCharacter, setCurCharacter] = useState<any>();
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const { token, showLogin, logout } = useAuth();
@@ -76,7 +103,8 @@ export function Chat() {
 
   useEffect(() => {
     if (characters && !characterId) {
-      setCharacter(characters[0].id);
+      setCharacterId(characters[0].id);
+      setCurCharacter(characters[0])
     }
   }, [characters, characterId]);
 
@@ -90,8 +118,27 @@ export function Chat() {
 
   const handleChooseCharacter = (id: number) => () => {
     setMobileOpen(false);
-    setCharacter(id);
+    setCharacterId(id);
   };
+
+  const handleEditCharacter = (id: number) => () => {
+    const idx = characters.findIndex((item: any) => item.id === id);
+    idx !== -1 && setCurCharacter(characters[idx])
+    setShowCreateCharacterModal(true);
+  }
+
+  const handleDeleteCharacter = (id: number) => () => {
+    characterApi
+      .deleteCharacter(`${id}`)
+      .then(() => {
+        showToast('删除成功');
+        if (id === characterId) {
+          setCharacterId(null);
+          setCurCharacter(null);
+        }
+        refetchCharacter();
+      })
+  }
 
   const handleSend = () => {
     if (!text) {
@@ -167,6 +214,7 @@ export function Chat() {
       showLogin();
       return;
     }
+    setCurCharacter(null)
     setShowCreateCharacterModal(true);
   };
 
@@ -265,6 +313,8 @@ export function Chat() {
             characters={characters}
             handleChooseCharacter={handleChooseCharacter}
             handleCreateCharacter={handleCreateCharacter}
+            handleEditCharacter={handleEditCharacter}
+            handleDeleteCharacter={handleDeleteCharacter}
           />
         </Stack>
       </Box>
@@ -380,8 +430,7 @@ export function Chat() {
                         mb={1}
                         mt={1}
                         ml={chat.role === "user" ? "auto" : 0}
-                        mr={chat.role === "user" ? 0 : "auto"}
-                        whiteSpace="pre-wrap"
+                        mr={chat.role === "user" ? 0 : "15%"}
                         letterSpacing={"1.2px"}
                         onClick={() => copyText(chat)}
                       >
@@ -393,7 +442,7 @@ export function Chat() {
                             }}
                           ></Skeleton>
                         ) : (
-                          chat.content
+                          <Box className="chat-box" dangerouslySetInnerHTML={{__html: mdi.render(chat.content)}}></Box>
                         )}
                       </Box>
                     );
@@ -449,6 +498,7 @@ export function Chat() {
         </Stack>
         <CreateCharacterModal
           open={showCreateCharacterModal}
+          character={curCharacter}
           onCreated={handleCharacterCreated}
           onClose={() => setShowCreateCharacterModal(false)}
         />
