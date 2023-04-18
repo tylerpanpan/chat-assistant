@@ -11,10 +11,11 @@ import {
   AppBar,
   Toolbar,
   useMediaQuery,
+  Tooltip,
 } from "@mui/material";
 import { Box, Stack, useTheme } from "@mui/system";
 import SendIcon from "@mui/icons-material/Send";
-import DeleteIcon from "@mui/icons-material/Delete";
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "react-query";
 import { useAuth } from "../../provider/AuthProvider";
@@ -24,7 +25,7 @@ import { useFeedback } from "../../components/Feedback";
 import { CharacterList } from "./components/CharacterList";
 import MenuIcon from "@mui/icons-material/Menu";
 import MenuOpenIcon from "@mui/icons-material/MenuOpen";
-import ExitToAppIcon from "@mui/icons-material/ExitToApp";
+import LogoutSharpIcon from '@mui/icons-material/LogoutSharp';
 import { RechargeModal } from "../../components/RechargeModal";
 import MarkdownIt from "markdown-it";
 import mdKatex from "@traptitech/markdown-it-katex";
@@ -261,6 +262,7 @@ export function Chat() {
     showDialog("确定要退出登录吗?", "退出登录", "取消", "确定", (confirm) => {
       if (confirm == 1) {
         logout();
+        setChats([]);
       }
     });
   };
@@ -275,35 +277,39 @@ export function Chat() {
     return (
       <Box width={drawerWidth} p={1.5} height="100%">
         <Stack direction={"column"} sx={{ height: "100%" }}>
-          <Box height="60px" mb={1} color="#fff">
+          <Box mb={1} color="#303030">
             <Stack
               justifyContent="space-between"
               direction="row"
               alignItems="center"
             >
+              {!token && (
+                <Typography variant="h6" gutterBottom>
+                  智能聊天助手
+                </Typography>
+              )}
               {token && (
                 <Box>
-                  <Typography variant="subtitle2">
-                    {userInfo?.username || "未登录"}
+                  <Typography variant="h6" gutterBottom>
+                    智能聊天助手
+                  </Typography>
+                  <Typography variant="caption">
+                    {userInfo?.username ? `账号：${userInfo?.username}` : "未登录"}
                   </Typography>
                   <Box>
                     <Typography variant="caption">
-                      余额: {userInfo?.balance} 元
+                      余额：{userInfo?.balance} 元
                     </Typography>
-                    <Button
-                      onClick={()=> setRechargeModalOpen(true)}
-                      sx={{ alignSelf: "center" }}
-                      size="small"
-                    >
+                    <Typography variant="caption" sx={{ marginLeft: '10px', fontSize: '13px', fontWeight: '500', color: '#1976d2', cursor: 'pointer' }} onClick={()=> setRechargeModalOpen(true)}>
                       充值
-                    </Button>
+                    </Typography>
                   </Box>
                 </Box>
               )}
               {token && (
-                <IconButton onClick={handleLogout}>
-                  <ExitToAppIcon htmlColor="#fff" />
-                </IconButton>
+                <Button onClick={handleLogout} size="small" sx={{ alignSelf: "flex-end", marginBottom: '-4px', color: '#999' }}>
+                  <LogoutSharpIcon sx={{ fontSize: '13px', marginRight: '3px', marginTop: '-2px' }} />退出
+                </Button>
               )}
             </Stack>
           </Box>
@@ -323,7 +329,7 @@ export function Chat() {
 
   return (
     <>
-      <Box height="100%" bgcolor={"#333"}>
+      <Box height="100%">
         <Stack direction="row" height="100%" width="100%">
           <Box
             component="nav"
@@ -339,7 +345,7 @@ export function Chat() {
                 "& .MuiDrawer-paper": {
                   boxSizing: "border-box",
                   width: drawerWidth,
-                  backgroundColor: "#333",
+                  backgroundColor: "#e7f8ff",
                 },
               }}
               open={mobileOpen}
@@ -357,7 +363,9 @@ export function Chat() {
                 "& .MuiDrawer-paper": {
                   boxSizing: "border-box",
                   width: drawerWidth,
-                  backgroundColor: "#333",
+                  backgroundColor: "#e7f8ff",
+                  boxShadow: 'inset -2px 0 2px 0 rgba(0,0,0,.05)',
+                  borderRight: 'none'
                 },
               }}
               open
@@ -367,7 +375,6 @@ export function Chat() {
           </Box>
           <Box
             height="100%"
-            p={2}
             sx={{ width: { sm: `calc(100% - ${drawerWidth}px)`, xs: "100%" } }}
           >
             <Stack
@@ -376,7 +383,7 @@ export function Chat() {
               width="100%"
               justifyContent="space-between"
             >
-              <Box height="44px" color="#fff" width="100%">
+              <Box p={2} color="#303030" width="100%" borderBottom="1px solid rgba(0, 0, 0, .1)">
                 <Stack
                   direction="row"
                   justifyContent="space-between"
@@ -388,9 +395,9 @@ export function Chat() {
                       onClick={() => setMobileOpen(!mobileOpen)}
                     >
                       {mobileOpen ? (
-                        <MenuOpenIcon htmlColor="#fff" />
+                        <MenuOpenIcon htmlColor="#303030" />
                       ) : (
-                        <MenuIcon htmlColor="#fff" />
+                        <MenuIcon htmlColor="#303030" />
                       )}
                     </IconButton>
                   </Box>
@@ -401,19 +408,21 @@ export function Chat() {
                   </Box>
                   <Box width="44px">
                     {token && chat && (
-                      <IconButton onClick={handleClearMessage}>
-                        <DeleteIcon color="error" />
-                      </IconButton>
+                      <Tooltip title="清空信息">
+                        <IconButton sx={{ border: '1px solid #dedede' }} onClick={handleClearMessage}>
+                          <DeleteOutlineIcon />
+                        </IconButton>
+                      </Tooltip>
                     )}
                   </Box>
                 </Stack>
               </Box>
-              <Box height="100%" overflow={"scroll"} ref={chatEndRef}>
+              <Box p={2} height="100%" overflow={"scroll"} ref={chatEndRef}>
                 <Stack direction="column-reverse">
                   {chats?.map((chat, index: number) => {
                     if(chat.role === 'recharge'){
                       return (
-                        <Box  color="#fff" display="flex" justifyContent="center" alignItems="center" p={2}>
+                        <Box  color="#303030" display="flex" justifyContent="center" alignItems="center" p={2}>
                           余额不足，请前往<Button onClick={()=> setRechargeModalOpen(true)} style={{fontSize: '18px'}}>充值</Button>
                         </Box>
                       )
@@ -421,9 +430,10 @@ export function Chat() {
                     return (
                       <Box
                         key={index}
-                        bgcolor={chat.role === "user" ? "#4290f5" : "#fff"}
-                        color={chat.role === "user" ? "#fff" : "#333"}
-                        borderRadius="16px"
+                        bgcolor={chat.role === "user" ? "#e7f8ff" : "rgba(0, 0, 0, .05)"}
+                        border="1px solid #dedede"
+                        color="#24292f"
+                        borderRadius="10px"
                         p={1}
                         pl={2}
                         pr={2}
@@ -449,47 +459,41 @@ export function Chat() {
                   })}
                 </Stack>
               </Box>
-              <Box
-                color="#fff"
-                minHeight="32px"
-                border={"1px solid #d1d1d1"}
-                borderRadius="28px"
-                p={1}
-                pl={1.5}
-                pr={1.5}
-              >
+              <Box mx={2} my={1.5} position="relative">
                 <Stack direction="row">
                   <InputBase
                     value={text}
                     onChange={(e) => setText(e.target.value)}
-                    style={{ color: "#d1d1d1" }}
+                    style={{
+                      border: '1px solid #dedede',
+                      borderRadius: '10px',
+                      color: "#303030",
+                      width: '100%',
+                      height: '100%',
+                      boxShadow: '0 -2px 5px rgba(0,0,0,.03)',
+                      padding: '10px 100px 10px 14px',
+                      resize: 'none',
+                      outline: 'none'
+                    }}
+                    rows={3}
                     maxRows={4}
                     multiline
                     fullWidth
                     disabled={sending}
+                    placeholder="请输入内容，Enter发送"
                     onKeyDown={handleKeyDown}
                   />
-                  <Box position="relative">
-                    <IconButton
+                  <Box
+                    position="absolute"
+                    right="10px"
+                    bottom="10px"
+                  >
+                    <Button
+                      variant="contained"
                       onClick={handleSend}
                       disabled={!text || sending}
-                      color="inherit"
-                    >
-                      <SendIcon />
-                    </IconButton>
-                    {sending && (
-                      <CircularProgress
-                        size={24}
-                        sx={{
-                          position: "absolute",
-                          right: "50%",
-                          top: "50%",
-                          marginTop: "-12px",
-                          marginRight: "-12px",
-                        }}
-                        color="primary"
-                      />
-                    )}
+                      startIcon={sending ? <CircularProgress size="16px" /> : <SendIcon />}
+                    >发送</Button>
                   </Box>
                 </Stack>
               </Box>

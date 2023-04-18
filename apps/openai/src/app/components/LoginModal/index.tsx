@@ -114,7 +114,7 @@ export function LoginModal({ ...props }: LoginModalProps) {
                 md: "400px",
               },
               padding: {
-                md: "30px",
+                md: "0",
                 xs: "0",
               },
               boxShadow: {
@@ -157,6 +157,9 @@ export function LoginModal({ ...props }: LoginModalProps) {
       </DialogContent>
       <DialogActions>
         <Button
+          sx={{
+            margin: '0 15px 10px'
+          }}
           fullWidth
           variant="contained"
           onClick={() => formik.handleSubmit()}

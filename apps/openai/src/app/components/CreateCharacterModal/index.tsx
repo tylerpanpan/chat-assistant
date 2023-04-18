@@ -61,13 +61,13 @@ export function CreateCharacterModal({
       setName('');
       setDefinition('');
     }
-  }, [character])
+  }, [character, props.open])
 
   return (
     <Dialog {...props}>
       <DialogTitle>{character?.name ? '角色编辑' : '创建角色'}</DialogTitle>
       <DialogContent>
-        <Box p={1.5}>
+        <Box py={1}>
           <TextField
             label="角色名"
             fullWidth
@@ -77,6 +77,7 @@ export function CreateCharacterModal({
           <TextField
             sx={{ marginTop: '10px' }}
             label="角色定义"
+            placeholder=""
             fullWidth
             multiline
             rows={4}
@@ -91,7 +92,7 @@ export function CreateCharacterModal({
             fullWidth
             onClick={character?.name ? handleSaveCharacter : handleCreateCharacter}
           >
-            {character?.name ? '保存' : '创建'}
+            {character?.name ? '保存' : '确定'}
           </Button>
         </Box>
       </DialogContent>
