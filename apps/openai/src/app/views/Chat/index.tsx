@@ -74,21 +74,27 @@ export function Chat() {
     () => userApi.userinfo(),
     {
       enabled: !!token,
+      refetchOnWindowFocus: false
     }
   );
 
   const { data: chat } = useQuery(
     ["chat/last", token, characterId],
     () => chatApi.lastChat(characterId),
-    { enabled: !!token && !!characterId }
+    { 
+      enabled: !!token && !!characterId,
+      refetchOnWindowFocus: false
+    }
   );
-  const [showCreateCharacterModal, setShowCreateCharacterModal] =
-    useState(false);
+  const [showCreateCharacterModal, setShowCreateCharacterModal] = useState(false);
 
   const { data: characters, refetch: refetchCharacter } = useQuery(
     ["character", token],
     () => characterApi.getCharacters(),
-    { enabled: !!token }
+    { 
+      enabled: !!token,
+      refetchOnWindowFocus: false
+    }
   );
 
   const { data, refetch: refetchChat } = useQuery(
@@ -96,6 +102,7 @@ export function Chat() {
     () => chatApi.getChats(chat?.id),
     {
       enabled: !!chat,
+      refetchOnWindowFocus: false,
       onSuccess: (data) => {
         setChats(data);
       },
