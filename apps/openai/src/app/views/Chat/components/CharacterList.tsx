@@ -24,11 +24,11 @@ export function CharacterList({
       sx={{ height: "100%" }}
       justifyContent="space-between"
     >
-      <Box height={"100%"} overflow={'scroll'}>
-        {characters?.map((bot: any) => (
+      <Box maxHeight={'calc(100vh - 172px)'} overflow={'scroll'}>
+        {characters?.map((bot: any, index: number) => (
           <Box
             onClick={handleChooseCharacter(bot.id)}
-            key={bot.id}
+            key={index}
             bgcolor="#fff"
             color="#303030"
             borderRadius="8px"

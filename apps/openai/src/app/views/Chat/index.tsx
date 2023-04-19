@@ -16,7 +16,7 @@ import {
 import { Box, Stack, useTheme } from "@mui/system";
 import SendIcon from "@mui/icons-material/Send";
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useCallback, useMemo, useRef, useState } from "react";
 import { useQuery } from "react-query";
 import { useAuth } from "../../provider/AuthProvider";
 import { CreateCharacterModal } from "../../components/CreateCharacterModal";
@@ -74,21 +74,27 @@ export function Chat() {
     () => userApi.userinfo(),
     {
       enabled: !!token,
+      refetchOnWindowFocus: false
     }
   );
 
   const { data: chat } = useQuery(
     ["chat/last", token, characterId],
     () => chatApi.lastChat(characterId),
-    { enabled: !!token && !!characterId }
+    { 
+      enabled: !!token && !!characterId,
+      refetchOnWindowFocus: false
+    }
   );
-  const [showCreateCharacterModal, setShowCreateCharacterModal] =
-    useState(false);
+  const [showCreateCharacterModal, setShowCreateCharacterModal] = useState(false);
 
   const { data: characters, refetch: refetchCharacter } = useQuery(
     ["character", token],
     () => characterApi.getCharacters(),
-    { enabled: !!token }
+    { 
+      enabled: !!token,
+      refetchOnWindowFocus: false
+    }
   );
 
   const { data, refetch: refetchChat } = useQuery(
@@ -96,6 +102,7 @@ export function Chat() {
     () => chatApi.getChats(chat?.id),
     {
       enabled: !!chat,
+      refetchOnWindowFocus: false,
       onSuccess: (data) => {
         setChats(data);
       },
@@ -240,7 +247,7 @@ export function Chat() {
   function copyToClipboard(text: string) {
     const dummy = document.createElement("textarea");
     document.body.appendChild(dummy);
-    dummy.value = text + `\n网站链接：https://grzl.ai`;
+    dummy.value = text + `\nAI个人助理：https://grzl.ai`;
     dummy.select();
     document.execCommand("copy");
     document.body.removeChild(dummy);
@@ -273,59 +280,57 @@ export function Chat() {
     }
   }, [chats, chatEndRef]);
 
-  const DrawerContent = () => {
-    return (
-      <Box width={drawerWidth} p={1.5} height="100%">
-        <Stack direction={"column"} sx={{ height: "100%" }}>
-          <Box mb={1} color="#303030">
-            <Stack
-              justifyContent="space-between"
-              direction="row"
-              alignItems="center"
-            >
-              {!token && (
+  const DrawerContent = useCallback(() => (
+    <Box width={drawerWidth} p={1.5} height="100%">
+      <Stack direction={"column"} sx={{ height: "100%" }}>
+        <Box mb={1} color="#303030">
+          <Stack
+            justifyContent="space-between"
+            direction="row"
+            alignItems="center"
+          >
+            {!token && (
+              <Typography variant="h6" gutterBottom>
+                AI个人助理
+              </Typography>
+            )}
+            {token && (
+              <Box>
                 <Typography variant="h6" gutterBottom>
-                  智能聊天助手
+                  AI个人助理
                 </Typography>
-              )}
-              {token && (
+                <Typography variant="caption">
+                  {userInfo?.username ? `账号：${userInfo?.username}` : "未登录"}
+                </Typography>
                 <Box>
-                  <Typography variant="h6" gutterBottom>
-                    智能聊天助手
-                  </Typography>
                   <Typography variant="caption">
-                    {userInfo?.username ? `账号：${userInfo?.username}` : "未登录"}
+                    余额：{userInfo?.balance} 元
                   </Typography>
-                  <Box>
-                    <Typography variant="caption">
-                      余额：{userInfo?.balance} 元
-                    </Typography>
-                    <Typography variant="caption" sx={{ marginLeft: '10px', fontSize: '13px', fontWeight: '500', color: '#1976d2', cursor: 'pointer' }} onClick={()=> setRechargeModalOpen(true)}>
-                      充值
-                    </Typography>
-                  </Box>
+                  <Typography variant="caption" sx={{ marginLeft: '10px', fontSize: '13px', fontWeight: '500', color: '#1976d2', cursor: 'pointer' }} onClick={()=> setRechargeModalOpen(true)}>
+                    充值
+                  </Typography>
                 </Box>
-              )}
-              {token && (
-                <Button onClick={handleLogout} size="small" sx={{ alignSelf: "flex-end", marginBottom: '-4px', color: '#999' }}>
-                  <LogoutSharpIcon sx={{ fontSize: '13px', marginRight: '3px', marginTop: '-2px' }} />退出
-                </Button>
-              )}
-            </Stack>
-          </Box>
-          <Divider variant="fullWidth" light sx={{ marginBottom: "10px" }} />
-          <CharacterList
-            characterId={characterId}
-            characters={characters}
-            handleChooseCharacter={handleChooseCharacter}
-            handleCreateCharacter={handleCreateCharacter}
-            handleEditCharacter={handleEditCharacter}
-            handleDeleteCharacter={handleDeleteCharacter}
-          />
-        </Stack>
-      </Box>
-    );
-  };
+              </Box>
+            )}
+            {token && (
+              <Button onClick={handleLogout} size="small" sx={{ alignSelf: "flex-end", marginBottom: '-4px', color: '#999' }}>
+                <LogoutSharpIcon sx={{ fontSize: '13px', marginRight: '3px', marginTop: '-2px' }} />退出
+              </Button>
+            )}
+          </Stack>
+        </Box>
+        <Divider variant="fullWidth" light sx={{ marginBottom: "10px" }} />
+        <CharacterList
+          characterId={characterId}
+          characters={characters}
+          handleChooseCharacter={handleChooseCharacter}
+          handleCreateCharacter={handleCreateCharacter}
+          handleEditCharacter={handleEditCharacter}
+          handleDeleteCharacter={handleDeleteCharacter}
+        />
+      </Stack>
+    </Box>
+  ), [token, userInfo, characterId, characters]);
 
   return (
     <>
@@ -354,7 +359,7 @@ export function Chat() {
                 keepMounted: true, // Better open performance on mobile.
               }}
             >
-              <DrawerContent />
+              { DrawerContent() }
             </Drawer>
             <Drawer
               variant="permanent"
@@ -370,7 +375,7 @@ export function Chat() {
               }}
               open
             >
-              <DrawerContent />
+              { DrawerContent() }
             </Drawer>
           </Box>
           <Box
