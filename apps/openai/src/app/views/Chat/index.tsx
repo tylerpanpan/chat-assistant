@@ -240,7 +240,7 @@ export function Chat() {
   function copyToClipboard(text: string) {
     const dummy = document.createElement("textarea");
     document.body.appendChild(dummy);
-    dummy.value = text + `\n网站链接：https://grzl.ai`;
+    dummy.value = text + `\nAI个人助理：https://grzl.ai`;
     dummy.select();
     document.execCommand("copy");
     document.body.removeChild(dummy);
@@ -285,13 +285,13 @@ export function Chat() {
             >
               {!token && (
                 <Typography variant="h6" gutterBottom>
-                  智能聊天助手
+                  AI个人助理
                 </Typography>
               )}
               {token && (
                 <Box>
                   <Typography variant="h6" gutterBottom>
-                    智能聊天助手
+                    AI个人助理
                   </Typography>
                   <Typography variant="caption">
                     {userInfo?.username ? `账号：${userInfo?.username}` : "未登录"}
