@@ -14,8 +14,11 @@ export class CustomStrategy extends PassportStrategy(Strategy) {
 
     async validate(req: Request) {
         //get client ip from request
-        let ip = req.ip;
+        let ip = req.headers['x-forwarded-for'];
         console.info(ip)
+        if(typeof ip !== 'string') {
+            ip = ip[0]
+        }
         let user = await this.userService.findOneBy({ ip })
 
         if (!user) {
