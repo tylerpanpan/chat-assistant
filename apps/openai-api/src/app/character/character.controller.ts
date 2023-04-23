@@ -4,6 +4,8 @@ import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { CharacterService } from "./character.service";
 import { CreateCharacterDto } from "./dto/create.dto";
 import { UpdateCharacterDto } from "./dto/update.dto";
+import { RolesGuard } from "../guards/roles.guard";
+import { Role, Roles } from "../role/role.decorator";
 
 @Controller('character')
 @ApiTags('character')
@@ -14,16 +16,17 @@ export class CharacterController {
     private characterService: CharacterService
   ) { }
 
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles(Role.Admin, Role.User)
   @Post()
   async post(
     @Body() dto: CreateCharacterDto,
     @Req() { user }
   ) {
-    return this.characterService.createCharacter(user,dto)
+    return this.characterService.createCharacter(user, dto)
   }
 
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Get()
   getAll(
     @Req() { user }
@@ -31,7 +34,8 @@ export class CharacterController {
     return this.characterService.getCharacters(user);
   }
 
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles(Role.Admin, Role.User)
   @Patch(':id')
   async patch(
     @Body() dto: UpdateCharacterDto,
@@ -41,7 +45,8 @@ export class CharacterController {
     return this.characterService.updateCharacter(id, user, dto)
   }
 
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles(Role.Admin, Role.User)
   @Delete(':id')
   async delete(
     @Req() { user },

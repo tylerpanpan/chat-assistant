@@ -9,11 +9,10 @@ import { OrderService } from './order/order.service';
 import { CreateUserDto } from './user/dto/create-user.dto';
 import { UserService } from './user/user.service';
 import AlipaySdk from 'alipay-sdk';
-import moment from 'moment';
 import { readFileSync } from "fs";
-import { HttpErrorByCode } from '@nestjs/common/utils/http-error-by-code.util';
-import { OrderStatus } from './order/order.entity';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { BindEmailDto } from './user/dto/bind-email.dto';
+import { Role } from './role/role.decorator';
 
 @Controller()
 @ApiTags('app')
@@ -48,10 +47,43 @@ export class AppController {
     return this.authService.login(req.user)
   }
 
+  @Post('ip_login')
+  @Throttle(5, 60)
+  @UseGuards(AuthGuard('custom'))
+  ipLogin(@Req() req: any) {
+    return this.authService.login(req.user)
+  }
+
   @Throttle(3, 60)
   @Post('register')
   register(@Body() body: CreateUserDto) {
     return this.userService.create(body)
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Post('bind')
+  @ApiBearerAuth()
+  async bind(@Req() { user }, @Body() body: BindEmailDto) {
+
+    if(user.type !== Role.Guest){
+      throw new HttpException('already has email', 400);
+    }
+    const exist = await this.userService.findOneBy({username: body.username})
+    if(exist){
+      throw new HttpException('email already exist', 400);
+    }
+    await this.userService.update(user.id, {
+      email: body.username,
+      username: body.username,
+      type: Role.User,
+      balance: 5,
+      password: this.userService.createPassword(body.username, body.password),
+      ip: null
+    })
+
+    const ret = await this.userService.findOne(user.id)
+
+    return this.authService.login(ret)
   }
 
   @Post('alipay_notify')

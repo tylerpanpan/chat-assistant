@@ -2,8 +2,9 @@ import { Body, Controller, Get, Param, Post, Query, Req, UseGuards } from "@nest
 import { AuthGuard } from "@nestjs/passport";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { ChatService } from "./chat.service";
+import { RolesGuard } from "../guards/roles.guard";
 
-@UseGuards(AuthGuard('jwt'))
+@UseGuards(AuthGuard('jwt'), RolesGuard)
 @Controller('chat')
 @ApiTags('chat')
 @ApiBearerAuth()

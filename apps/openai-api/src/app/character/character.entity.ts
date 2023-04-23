@@ -12,6 +12,9 @@ export class Character {
   @Property({ type: 'text', nullable: true })
   avatar?: string;
 
+  @Property({ type: 'text', nullable: true })
+  description: string;
+
   @Property({ type: 'text' })
   definition: string;
 
@@ -29,4 +32,10 @@ export class Character {
 
   @Property({ nullable: true, type: 'json' })
   presetQuestions: string[] = []
+
+  @Property({ nullable: true })
+  sort: number;
+
+  @Property({ nullable: true, default: false })
+  isGuestAccess: boolean;
 }

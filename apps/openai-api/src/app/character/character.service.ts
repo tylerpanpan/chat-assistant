@@ -5,6 +5,7 @@ import { User } from "../user/entities/user.entity";
 import { Character } from "./character.entity";
 import { CreateCharacterDto } from "./dto/create.dto";
 import { UpdateCharacterDto } from "./dto/update.dto";
+import { Role } from "../role/role.decorator";
 
 @Injectable()
 export class CharacterService {
@@ -15,13 +16,16 @@ export class CharacterService {
   ) { }
 
   async getCharacters(user: User) {
+    if (user.type === Role.Guest) {
+      return this.characterRepository.find({ isGuestAccess: true }, { orderBy: { isDefault: 'desc', sort: 'desc', id: 'desc' } });
+    }
     return this.characterRepository.find({
       $or: [{
         user
       }, {
         isDefault: true
       }]
-    }, { orderBy: { isDefault: 'desc', id: 'desc' } });
+    }, { orderBy: { isDefault: 'desc', sort: 'desc', id: 'desc' } });
   }
 
   async createCharacter(user: User, dto: CreateCharacterDto) {

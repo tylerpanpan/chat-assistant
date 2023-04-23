@@ -5,4 +5,5 @@ export default registerAs('system', () => ({
   openAiKey: process.env.OPENAI_KEY,
   openAiBasePath: process.env.OPENAI_BASE_PATH,
   pricePerThousandTokens: process.env.PRICE_PER_THOUSAND_TOKENS,
+  guestMessageLimit: process.env.GUEST_MESSAGE_LIMIT,
 }));

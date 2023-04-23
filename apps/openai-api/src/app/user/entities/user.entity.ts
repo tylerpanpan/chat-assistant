@@ -1,4 +1,5 @@
-import { Collection, Entity, ManyToMany, OneToMany, OneToOne, PrimaryKey, Property } from "@mikro-orm/core";
+import { Collection, Entity, Enum, ManyToMany, OneToMany, OneToOne, PrimaryKey, Property } from "@mikro-orm/core";
+import { Role } from "../../role/role.decorator";
 
 
 @Entity()
@@ -7,19 +8,19 @@ export class User {
   @PrimaryKey({ autoincrement: true })
   id: number;
 
-  @Property()
+  @Property({ nullable: true })
   username: string;
 
-  @Property()
+  @Property({ nullable: true })
   email: string;
 
-  @Property()
+  @Property({ nullable: true })
   password: string;
 
-  @Property()
-  type: string;
+  @Enum({ items: () => Role, default: Role.Guest, nullable: true })
+  type: Role;
 
-  @Property({})
+  @Property({ nullable: true })
   secret: string;
 
   @Property({ default: 1 })
@@ -28,6 +29,12 @@ export class User {
   @Property({ type: 'int', default: 0, nullable: true })
   tokens: number
 
-  @Property({ type: 'decimal',scale: 8,precision: 2, default: 0, nullable: true })
+  @Property({ type: 'decimal', scale: 8, precision: 2, default: 0, nullable: true })
   balance: number
+
+  @Property({ type: 'varchar', length: 15, nullable: true })
+  ip: string
+
+  @Property({ default: 0, nullable: true })
+  messageCount: number;
 }
