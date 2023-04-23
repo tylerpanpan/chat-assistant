@@ -304,7 +304,7 @@ export function Chat() {
                 </Typography>
                 <Box>
                   <Typography variant="caption">
-                    余额：{userInfo?.balance} 元
+                    积分：{Math.floor(userInfo?.balance ? userInfo?.balance * 100 : 0)}
                   </Typography>
                   <Typography variant="caption" sx={{ marginLeft: '10px', fontSize: '13px', fontWeight: '500', color: '#1976d2', cursor: 'pointer' }} onClick={()=> setRechargeModalOpen(true)}>
                     充值
