@@ -84,7 +84,7 @@ export function RechargeModal({ ...props }: DialogProps) {
                 >
                   <Box p={2} bgcolor="#f3f3f3">
                     <Typography variant="subtitle1" display="block">
-                      {item.amount} 元
+                      {item.amount} 元（{item.amount * 100} 积分）
                     </Typography>
 
                     <Typography variant="caption" color="#666" display="block">
