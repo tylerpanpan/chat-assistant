@@ -52,6 +52,9 @@ export class ChatController {
   ) {
     if (stream) {
       res.append('Content-Type', 'text/event-stream')
+      res.append('Cache-Control', 'no-cache')
+      res.append('Connection', 'keep-alive')
+      res.append('X-Accel-Buffering', 'no')
     }
     const response = await this.chatService.chat(chatId, user, text, stream, (msg) => {
       console.info(msg)
