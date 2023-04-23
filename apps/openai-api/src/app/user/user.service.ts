@@ -31,6 +31,7 @@ export class UserService {
     const user = new User()
     user.ip = ip
     user.type = Role.Guest;
+    user.balance = 0;
     await this.userRepo.persistAndFlush(user)
     return user;
   }
