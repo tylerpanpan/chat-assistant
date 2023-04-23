@@ -7,6 +7,12 @@ import { Character } from "../character/character.entity";
 import { User } from "../user/entities/user.entity";
 import { Chat } from "./entities/chat.entity";
 import { Role } from "../role/role.decorator";
+import { ChatOpenAI } from 'langchain/chat_models/openai';
+import { BufferMemory, ChatMessageHistory } from "langchain/memory";
+import { ConversationChain } from 'langchain/chains'
+import { ChatPromptTemplate, HumanMessagePromptTemplate, MessagesPlaceholder, SystemMessagePromptTemplate } from "langchain/prompts";
+import { CallbackManager } from "langchain/callbacks";
+
 
 @Injectable()
 export class ChatService {
@@ -49,7 +55,7 @@ export class ChatService {
     return chat
   }
 
-  async chat(chatId: number, user: User, text: string) {
+  async chat(chatId: number, user: User, text: string, stream: boolean = false, handleNewToken?: (msg: string) => void) {
     const userRepo = this.em.getRepository(User);
     const u = await userRepo.findOne({ id: user.id })
 
@@ -67,26 +73,74 @@ export class ChatService {
       throw new BadRequestException()
     }
 
+    // const contexts = this.openaiLib.buildContext(chat.messages, chat.character.definition, 2048)
+    // const messages = this.openaiLib.buildMessages(text, chat.character.definition, contexts.filter(ctx => !ctx.isDeleted))
+
+
+    const chatPrompt = ChatPromptTemplate.fromPromptMessages([
+      SystemMessagePromptTemplate.fromTemplate(chat.character.definition),
+      new MessagesPlaceholder("history"),
+      HumanMessagePromptTemplate.fromTemplate("{input}"),
+    ])
+
     const contexts = this.openaiLib.buildContext(chat.messages, chat.character.definition, 2048)
-    const messages = this.openaiLib.buildMessages(text, chat.character.definition, contexts.filter(ctx => !ctx.isDeleted))
+    const filteredContext = contexts.filter(ctx => !ctx.isDeleted)
 
+    const history = new ChatMessageHistory()
+    filteredContext.forEach(msg => {
+      if (msg.role === 'assistant') {
+        history.addAIChatMessage(msg.content)
+      } else if (msg.role === 'user') {
+        history.addUserMessage(msg.content)
+      }
+    })
 
-    const response = await this.openaiLib.chat(messages);
-    const assistantContext = response.choices[0].message.content
+    const memory = new BufferMemory({
+      chatHistory: history,
+      returnMessages: true,
+      memoryKey: `history`,
+    });
 
-    const newMessages = [...contexts, { role: 'user', content: text }, { role: 'assistant', content: assistantContext }]
+    let totalTokens = 0
+
+    const chatModel = new ChatOpenAI({
+      openAIApiKey: this.configService.get('system.openAiKey'),
+      streaming: stream,
+      modelName: 'gpt-3.5-turbo-0301',
+      callbackManager: CallbackManager.fromHandlers({
+        handleLLMEnd: async (llmresult) => {
+          const tokenUsage = llmresult.llmOutput?.tokenUsage
+          totalTokens = tokenUsage.totalTokens
+        },
+        handleLLMNewToken: async (token) => {
+          handleNewToken(token)
+        }
+      })
+    }, { basePath: this.configService.get('system.openAiBasePath') })
+
+    const chain = new ConversationChain({
+      memory,
+      llm: chatModel,
+      prompt: chatPrompt,
+    })
+
+    const { response } = await chain.call({ input: text });
+
+    totalTokens = totalTokens || this.openaiLib.countMessageToken(this.openaiLib.buildMessages(text, chat.character.definition, filteredContext))
+
+    const newMessages = [...contexts, { role: 'user', content: text }, { role: 'assistant', content: response }]
     chat.messages = newMessages as any
-    chat.totalTokens += response.usage.total_tokens || 0
+    chat.totalTokens += totalTokens || 0
     await this.chatRepo.flush()
 
     if (u.type !== Role.Guest) {
       const pricePerThousandTokens = +this.configService.get('system.pricePerThousandTokens') || 0.07
-      u.tokens += response.usage.total_tokens || 0
-      u.balance -= (response.usage.total_tokens || 0) / 1000 * pricePerThousandTokens
+      u.tokens += totalTokens || 0
+      u.balance -= (totalTokens || 0) / 1000 * pricePerThousandTokens
     }
     u.messageCount += 1
 
     await userRepo.flush()
-    return response.choices[0].message.content;
+    return response;
   }
 }

@@ -1,7 +1,7 @@
-import rp from 'request-promise'
 import { GPTChatModel } from '../enums/GPTModel';
 import { get_encoding } from '@dqbd/tiktoken'
 import { OpenAIApi, Configuration } from 'openai'
+import axios from 'axios'
 interface ChatResponse {
   id: string;
   object: string;
@@ -32,7 +32,7 @@ export interface Message {
   role: 'system' | 'user' | 'assistant';
   content: string;
   isDeleted?: boolean;
-  time: number;
+  time?: number;
 }
 
 export class OpenAILib {
@@ -44,26 +44,18 @@ export class OpenAILib {
     this.openai = new OpenAIApi(configuration, basePath);
   }
 
-  async chat(message: Message[], max_tokens = 2048) {
+  async chat(message: Message[], stream: boolean = false, max_tokens = 2048) {
     return this.openai.createChatCompletion({
       messages: message,
       model: GPTChatModel.GPT35TURBO0301,
-    }).then(res => {
-      return res.data;
+      stream: true
+    }, { responseType: 'stream' }).then((res: any) => {
+      
+      res.data.on('data', (result: any) => {
+        console.info('1' , result.toString())
+      })
+      return res.data
     })
-    // return rp('https://api.openai.com:443/v1/chat/completions', {
-    //   headers: {
-    //     Authorization: `Bearer ${this.apiKey}`
-    //   },
-    //   json: true,
-    //   body: {
-    //     model: GPTChatModel.GPT35TURBO0301,
-    //     messages: message,
-    //   },
-    //   method: 'post'
-    // }).then(res => {
-    //   return res as ChatResponse
-    // })
   }
 
   countMessageToken(message: Message[]) {
