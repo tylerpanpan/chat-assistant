@@ -2,5 +2,5 @@
 
 ✨ This is an AI assitant tool, https://grzl.ai ✨
 
-Please star this project if you found this project is cool! 
+Please star this project if you find this project is useful! 
 
