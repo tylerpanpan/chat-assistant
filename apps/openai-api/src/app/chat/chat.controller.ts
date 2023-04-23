@@ -1,8 +1,9 @@
-import { Body, Controller, Get, Param, Post, Query, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Param, ParseBoolPipe, Post, Query, Req, Res, UseGuards } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { ChatService } from "./chat.service";
 import { RolesGuard } from "../guards/roles.guard";
+import { Response } from "express";
 
 @UseGuards(AuthGuard('jwt'), RolesGuard)
 @Controller('chat')
@@ -43,9 +44,25 @@ export class ChatController {
   @Post(':id')
   async chat(
     @Param('id') chatId: number,
-    @Body() { text }: { text: string },
-    @Req() { user }
+    @Body('text') text: string,
+    @Req() { user },
+    @Res() res: Response,
+    @Body('stream') stream?: boolean,
+
   ) {
-    return this.chatService.chat(chatId, user, text)
+    if (stream) {
+      res.append('Content-Type', 'text/event-stream')
+    }
+    const response = await this.chatService.chat(chatId, user, text, stream, (msg) => {
+      console.info(msg)
+      res.write(`data: ${JSON.stringify(msg)}\n\n`)
+    })
+    console.info(response)
+    if (stream) {
+      //write end
+      res.end()
+    } else {
+      res.send(response) 
+    }
   }
 }
