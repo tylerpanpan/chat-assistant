@@ -6,6 +6,7 @@ import * as crypto from 'crypto'
 import { User } from './entities/user.entity';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { EntityRepository, FilterQuery } from '@mikro-orm/core';
+import { Role } from '../role/role.decorator';
 @Injectable()
 export class UserService {
 
@@ -26,6 +27,14 @@ export class UserService {
     return { id: result }
   }
 
+  async createByIP(ip: string) {
+    const user = new User()
+    user.ip = ip
+    user.type = Role.Guest;
+    await this.userRepo.persistAndFlush(user)
+    return user;
+  }
+
   async pages(p: number, ps: number) {
     const [data, total] = await this.userRepo.findAndCount({}, {
       limit: ps,
@@ -42,7 +51,7 @@ export class UserService {
   }
 
   findOne(id: number) {
-    return this.userRepo.findOne({ id }, { fields: ['email', 'id', 'tokens', 'username', 'balance'] });
+    return this.userRepo.findOne({ id }, { fields: ['email', 'id', 'tokens', 'username', 'balance', 'type', 'enable'] });
   }
 
   findOneBy(where: FilterQuery<User>) {

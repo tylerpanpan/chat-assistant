@@ -6,6 +6,7 @@ import { Message, OpenAILib } from "@openai/openai-lib";
 import { Character } from "../character/character.entity";
 import { User } from "../user/entities/user.entity";
 import { Chat } from "./entities/chat.entity";
+import { Role } from "../role/role.decorator";
 
 @Injectable()
 export class ChatService {
@@ -52,8 +53,11 @@ export class ChatService {
     const userRepo = this.em.getRepository(User);
     const u = await userRepo.findOne({ id: user.id })
 
+    if (u.type === Role.Guest && user.messageCount >= (+this.configService.get('system.guestMessageLimit') || 10)) {
+      throw new HttpException('You have reached the limit of messages', 403)
+    }
 
-    if (u.balance <= 0) {
+    if (u.type !== Role.Guest && u.balance <= 0) {
       throw new HttpException('You have no tokens left', 402)
     }
 
@@ -75,10 +79,13 @@ export class ChatService {
     chat.totalTokens += response.usage.total_tokens || 0
     await this.chatRepo.flush()
 
-    const pricePerThousandTokens = +this.configService.get('system.pricePerThousandTokens') || 0.07
+    if (u.type !== Role.Guest) {
+      const pricePerThousandTokens = +this.configService.get('system.pricePerThousandTokens') || 0.07
+      u.tokens += response.usage.total_tokens || 0
+      u.balance -= (response.usage.total_tokens || 0) / 1000 * pricePerThousandTokens
+    }
+    u.messageCount += 1
 
-    u.tokens += response.usage.total_tokens || 0
-    u.balance -= (response.usage.total_tokens || 0) / 1000 * pricePerThousandTokens
     await userRepo.flush()
     return response.choices[0].message.content;
   }
