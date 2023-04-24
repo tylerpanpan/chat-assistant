@@ -4,6 +4,7 @@ import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { ChatService } from "./chat.service";
 import { RolesGuard } from "../guards/roles.guard";
 import { Response } from "express";
+import { CreateChatDto } from "./dto/create.dto";
 
 @UseGuards(AuthGuard('jwt'), RolesGuard)
 @Controller('chat')
@@ -25,7 +26,7 @@ export class ChatController {
 
   @Post('')
   createChat(
-    @Body('characterId') characterId: number,
+   @Body() { characterId }: CreateChatDto,
     @Req() { user }
   ) {
     return this.chatService.create(characterId, user)
@@ -33,9 +34,10 @@ export class ChatController {
 
   @Get('')
   getAllChats(
-    @Req() { user }
+    @Req() { user },
+    @Query('characterId') characterId: number,
   ) {
-    return this.chatService.getAll(user)
+    return this.chatService.getAll(user, characterId)
   }
 
   @Delete(':id')
