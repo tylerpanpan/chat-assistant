@@ -4,6 +4,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import AddCircleOutlineSharpIcon from '@mui/icons-material/AddCircleOutlineSharp';
 
 export function CharacterList({
+  isGuest,
   characters,
   characterId,
   handleChooseCharacter,
@@ -11,6 +12,7 @@ export function CharacterList({
   handleEditCharacter,
   handleDeleteCharacter
 }: {
+  isGuest: boolean,
   characters: any[];
   characterId?: number | null;
   handleChooseCharacter: (characterId: number) => () => void;
@@ -64,8 +66,8 @@ export function CharacterList({
         ))}
       </Box>
       <Box>
-        <Button variant="outlined" size="large" fullWidth startIcon={<AddCircleOutlineSharpIcon />} onClick={handleCreateCharacter}>
-          创建角色
+        <Button variant="outlined" size="large" fullWidth startIcon={!isGuest && <AddCircleOutlineSharpIcon />} onClick={handleCreateCharacter}>
+          {isGuest ? '登录/注册' : '创建角色' }
         </Button>
       </Box>
     </Stack>

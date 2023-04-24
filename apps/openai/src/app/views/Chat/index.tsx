@@ -62,12 +62,23 @@ export function Chat() {
   const [curCharacter, setCurCharacter] = useState<any>();
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
-  const { token, showLogin, logout } = useAuth();
+  const { token, showLogin, login, logout } = useAuth();
   const { showDialog, showToast } = useFeedback();
   const chatEndRef = useRef<HTMLDivElement>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [rechargeModalOpen, setRechargeModalOpen] = useState(false);
-
+  
+  useQuery(
+    ["ipLogin"],
+    () => userApi.ipLogin(),
+    {
+      enabled: !localStorage.getItem('__app_token'),
+      refetchOnWindowFocus: false,
+      onSuccess: (data) => {
+        login(data.access_token, data.user)
+      },
+    }
+  );
 
   const { data: userInfo } = useQuery(
     ["userinfo", token],
@@ -173,21 +184,65 @@ export function Chat() {
       ...chats,
     ]);
     chatApi
-      .chat(chat.id, text)
-      .then((res) => {
-        // refetchChat();
-        console.info(res);
-        //delete first loading chat
-        setChats([
-          { role: "assistant", content: res },
-          {
-            role: "user",
-            content: text,
-          },
-          ...chats,
-        ]);
-        setSending(false);
-        setText("");
+      .chat(chat.id, text, true)
+      .then((response: any) => {
+        const reader = response.body.getReader();
+        const stream = new ReadableStream({
+          start(controller) {
+            function push() {
+              reader.read().then((result: any) => {
+                if (result.done) {
+                  controller.close();
+                  return;
+                }
+                controller.enqueue(result.value);
+                push();
+              });
+            };
+            push();
+          }
+        });
+        // const decoder = new TextDecoder();
+        let streamText = ''
+        const textStream = stream.pipeThrough(new TextDecoderStream()).getReader();
+        //@ts-ignore
+        textStream.read().then(function processText({ done, value }) {
+          if (done) {
+            console.log('Stream complete');
+            if (response.status === 402) {
+              setChats([
+                {
+                  'role': 'recharge',
+                  'content': 'Tokens不足，请充值',
+                },
+                ...chats
+              ])
+            } else if (response.status === 403) {
+              setChats([...chats])
+              showToast('您已达到10次使用限制，请登录或注册继续体验')
+            } else {
+              refetchChat()
+            }
+            return;
+          }
+          // 处理接收到的文本数据
+          console.log(value);
+          const _value = value.replace(/data: "(.*?)"/g, '$1').replace(/\n/g, '')
+          streamText += _value
+
+          setChats([
+            { role: "assistant", content: streamText },
+            {
+              role: "user",
+              content: text,
+            },
+            ...chats,
+          ]);
+          setSending(false);
+          setText("");
+          // 递归读取下一个文本块
+          return textStream.read().then(processText);
+        });
       })
       .catch((e) => {
         setSending(false);
@@ -218,7 +273,7 @@ export function Chat() {
   };
 
   const handleCreateCharacter = () => {
-    if (!token) {
+    if (!token || userInfo?.type === 'guest') {
       showLogin();
       return;
     }
@@ -270,6 +325,8 @@ export function Chat() {
       if (confirm == 1) {
         logout();
         setChats([]);
+        setCharacterId(null);
+        setCurCharacter(null);
       }
     });
   };
@@ -300,19 +357,19 @@ export function Chat() {
                   AI个人助理
                 </Typography>
                 <Typography variant="caption">
-                  {userInfo?.username ? `账号：${userInfo?.username}` : "未登录"}
+                  {userInfo?.username ? `账号：${userInfo?.username}` : "未登录用户，只能使用10次"}
                 </Typography>
                 <Box>
-                  <Typography variant="caption">
+                  {userInfo?.username && <Typography variant="caption">
                     积分：{Math.floor(userInfo?.balance ? userInfo?.balance * 100 : 0)}
-                  </Typography>
-                  <Typography variant="caption" sx={{ marginLeft: '10px', fontSize: '13px', fontWeight: '500', color: '#1976d2', cursor: 'pointer' }} onClick={()=> setRechargeModalOpen(true)}>
+                  </Typography>}
+                  {userInfo?.username && <Typography variant="caption" sx={{ marginLeft: '10px', fontSize: '13px', fontWeight: '500', color: '#1976d2', cursor: 'pointer' }} onClick={()=> setRechargeModalOpen(true)}>
                     充值
-                  </Typography>
+                  </Typography>}
                 </Box>
               </Box>
             )}
-            {token && (
+            {token && userInfo?.username && (
               <Button onClick={handleLogout} size="small" sx={{ alignSelf: "flex-end", marginBottom: '-4px', color: '#999' }}>
                 <LogoutSharpIcon sx={{ fontSize: '13px', marginRight: '3px', marginTop: '-2px' }} />退出
               </Button>
@@ -321,6 +378,7 @@ export function Chat() {
         </Box>
         <Divider variant="fullWidth" light sx={{ marginBottom: "10px" }} />
         <CharacterList
+          isGuest={userInfo?.type === 'guest'}
           characterId={characterId}
           characters={characters}
           handleChooseCharacter={handleChooseCharacter}
