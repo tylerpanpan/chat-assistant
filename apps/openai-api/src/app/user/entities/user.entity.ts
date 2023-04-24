@@ -38,6 +38,6 @@ export class User {
   @Property({ default: 0, nullable: true })
   messageCount: number;
 
-  @ManyToOne(()=> User)
-  referUser: User;
+  @ManyToOne(() => User, { nullable: true })
+  referUser?: User;
 }
