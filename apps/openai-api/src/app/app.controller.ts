@@ -72,16 +72,8 @@ export class AppController {
     if(exist){
       throw new HttpException('email already exist', 400);
     }
-    await this.userService.update(user.id, {
-      email: body.username,
-      username: body.username,
-      type: Role.User,
-      balance: 5,
-      password: this.userService.createPassword(body.username, body.password),
-      ip: null
-    })
 
-    const ret = await this.userService.findOne(user.id)
+    const ret = await this.userService.bindEmail(user.id, body.username, body.password, body.referUserId)
 
     return this.authService.login(ret)
   }

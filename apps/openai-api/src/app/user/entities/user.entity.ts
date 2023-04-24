@@ -1,4 +1,4 @@
-import { Collection, Entity, Enum, ManyToMany, OneToMany, OneToOne, PrimaryKey, Property } from "@mikro-orm/core";
+import { Entity, Enum, ManyToOne, PrimaryKey, Property } from "@mikro-orm/core";
 import { Role } from "../../role/role.decorator";
 
 
@@ -37,4 +37,7 @@ export class User {
 
   @Property({ default: 0, nullable: true })
   messageCount: number;
+
+  @ManyToOne(()=> User)
+  referUser: User;
 }
