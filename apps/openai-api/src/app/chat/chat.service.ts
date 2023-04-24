@@ -33,6 +33,26 @@ export class ChatService {
     return this.chatRepo.findOne({ id: chatId, user }, { populate: ['character'] })
   }
 
+  async getAll(user: User) {
+    const chats = await this.chatRepo.find({ user }, { populate: ['character'] })
+    return chats
+  }
+
+  async delete(chatId: number, user: User) {
+    const chat = await this.chatRepo.findOne({ id: chatId, user })
+    if (!chat) {
+      throw new NotFoundException()
+    }
+    await this.chatRepo.removeAndFlush(chat)
+  }
+
+  create(characterId: number, user: User) {
+    const chat = new Chat()
+    chat.user = user
+    chat.character = this.em.getReference(Character, characterId)
+    return this.chatRepo.persistAndFlush(chat)
+  }
+
   async clearMessage(chatId: number, user: User) {
     const chat = await this.chatRepo.findOne({ id: chatId, user });
     if (!chat) {
