@@ -100,12 +100,16 @@ export class UserAPI extends BaseAPI {
     return this.post<{ access_token: string, user: any }>('/api/login', { username, password })
   }
 
-  register(username: string, password: string) {
-    return this.post<any>('/api/register', { username, password })
+  register(username: string, password: string, referUserId?: string) {
+    return this.post<any>('/api/register', { username, password, referUserId })
   }
 
   userinfo() {
-    return this.get<{ username: string, email: string, tokens: number,balance: number }>('/api/user/my')
+    return this.get<{ username: string, email: string, tokens: number,balance: number, type: string }>('/api/user/my')
+  }
+
+  ipLogin() {
+    return this.post<any>('/api/ip_login', {})
   }
 
 }
@@ -140,8 +144,17 @@ export class ChatAPI extends BaseAPI {
     return this.get<any>('/api/chat/last', { characterId })
   }
 
-  chat(id: string, text: any) {
-    return this.post<any>(`/api/chat/${id}`, { text })
+  chat(id: string, text: any, stream = false) {
+    return fetch(`/api/chat/${id}`, {
+      headers: {
+        'Accept': 'text/event-stream',
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${this.token}`
+      },
+      method: 'POST',
+      body: JSON.stringify({ text, stream })
+    })
+    // return this.post<any>(`/api/chat/${id}`, { text, stream })
   }
 
   clearMessage(id: string) {
