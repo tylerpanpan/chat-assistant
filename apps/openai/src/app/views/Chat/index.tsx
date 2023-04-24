@@ -208,7 +208,7 @@ export function Chat() {
         //@ts-ignore
         textStream.read().then(function processText({ done, value }) {
           if (done) {
-            console.log('Stream complete');
+            console.log('Stream complete', streamText);
             if (response.status === 402) {
               setChats([
                 {
@@ -217,17 +217,15 @@ export function Chat() {
                 },
                 ...chats
               ])
-            } else if (response.status === 403) {
+            } 
+            if (response.status === 403) {
               setChats([...chats])
               showToast('您已达到10次使用限制，请登录或注册继续体验')
-            } else {
-              refetchChat()
             }
             return;
           }
           // 处理接收到的文本数据
-          console.log(value);
-          const _value = value.replace(/data: "(.*?)"/g, '$1').replace(/\n/g, '')
+          const _value = value.replace(/data: "(.*)"/g, '$1').replace(/\n/g, '').replace(/\\n/g, '\n').replace(/\"/g, '"').replace(/\\/g, '')
           streamText += _value
 
           setChats([
