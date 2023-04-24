@@ -17,7 +17,7 @@ export class CharacterService {
 
   async getCharacters(user: User) {
     if (user.type === Role.Guest) {
-      return this.characterRepository.find({ isGuestAccess: true }, { orderBy: { isDefault: 'desc', sort: 'desc', id: 'desc' } });
+      return this.characterRepository.find({ isGuestAccess: true }, { orderBy: { isDefault: 'desc', sort: 'desc', id: 'asc' } });
     }
     return this.characterRepository.find({
       $or: [{
@@ -25,7 +25,7 @@ export class CharacterService {
       }, {
         isDefault: true
       }]
-    }, { orderBy: { isDefault: 'desc', sort: 'desc', id: 'desc' } });
+    }, { orderBy: { isDefault: 'desc', sort: 'desc', id: 'asc' } });
   }
 
   async createCharacter(user: User, dto: CreateCharacterDto) {
