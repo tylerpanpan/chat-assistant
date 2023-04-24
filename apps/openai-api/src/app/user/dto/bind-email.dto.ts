@@ -6,4 +6,7 @@ export class BindEmailDto {
 
   @ApiProperty()
   password: string
+
+  @ApiProperty()
+  referUserId: number
 }

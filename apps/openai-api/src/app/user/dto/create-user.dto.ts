@@ -6,5 +6,7 @@ export class CreateUserDto {
 
   @ApiProperty()
   password: string
-  role: number
+
+  @ApiProperty()
+  referUserId: number
 }

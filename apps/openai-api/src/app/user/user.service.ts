@@ -7,23 +7,39 @@ import { User } from './entities/user.entity';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { EntityRepository, FilterQuery } from '@mikro-orm/core';
 import { Role } from '../role/role.decorator';
+import { ConfigService } from '@nestjs/config';
 @Injectable()
 export class UserService {
 
   constructor(
     @InjectRepository(User)
-    private userRepo: EntityRepository<User>
+    private userRepo: EntityRepository<User>,
+    private configService: ConfigService
   ) { }
 
-  async create(createUserDto: CreateUserDto) {
-    const exist = await this.userRepo.findOne({ username: createUserDto.username })
+  async create({ username, password, referUserId }: CreateUserDto) {
+    const exist = await this.userRepo.findOne({ username: username })
     if (exist) {
       throw new HttpException('用户名已存在', 500)
     }
+
+    let referUser = null;
+    if (referUserId) {
+      referUser = await this.userRepo.findOne({ id: referUserId })
+    }
+
     const result = await this.userRepo.nativeInsert({
-      username: createUserDto.username,
-      password: this.createPassword(createUserDto.username, createUserDto.password)
+      username,
+      password: this.createPassword(username, password),
+      referUser,
+      balance: +this.configService.get('system.userDefaultTokens') || 0,
     }, {});
+
+    if (referUser) {
+      referUser.balance = +referUser.balance + (+this.configService.get('system.inviteRewardTokens') || 0);
+      await this.userRepo.flush();
+    }
+
     return { id: result }
   }
 
@@ -33,6 +49,38 @@ export class UserService {
     user.type = Role.Guest;
     user.balance = 0;
     await this.userRepo.persistAndFlush(user)
+    return user;
+  }
+
+  async bindEmail(id: number, username: string, password: string, referUserId?: number) {
+    let referUser = null;
+
+    if (referUserId) {
+      referUser = await this.userRepo.findOne(referUserId)
+    }
+
+    const user = await this.userRepo.findOne(id)
+    //  email: body.username,
+    //  username: body.username,
+    //  type: Role.User,
+    //  balance: 5,
+    //  password: this.userService.createPassword(body.username, body.password),
+    //  ip: null
+    user.email = username
+    user.username = username
+    user.type = Role.User
+    user.balance = +this.configService.get('system.userDefaultTokens') || 0
+    user.password = this.createPassword(username, password)
+    user.ip = null
+    user.referUser = referUser
+    console.info(this.configService.get('system.userDefaultTokens'),user.balance)
+    await this.userRepo.flush()
+
+    if (referUser) {
+      referUser.balance = +referUser.balance + (+this.configService.get('system.inviteRewardTokens') || 0);
+      console.info(this.configService.get('system.inviteRewardTokens'),referUser.balance)
+      await this.userRepo.flush();
+    }
     return user;
   }
 
