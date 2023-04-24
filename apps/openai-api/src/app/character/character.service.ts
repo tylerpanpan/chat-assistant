@@ -35,6 +35,7 @@ export class CharacterService {
     character.name = dto.name;
     character.welcome = dto.welcome;
     character.presetQuestions = dto.presetQuestions;
+    character.description = dto.description;
 
     await this.characterRepository.persistAndFlush(character)
 
@@ -52,6 +53,7 @@ export class CharacterService {
     character.name = dto.name;
     character.welcome = dto.welcome;
     character.presetQuestions = dto.presetQuestions;
+    character.description = dto.description;
 
     await this.characterRepository.flush()
     return character;

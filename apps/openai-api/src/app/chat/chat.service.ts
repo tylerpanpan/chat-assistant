@@ -33,6 +33,31 @@ export class ChatService {
     return this.chatRepo.findOne({ id: chatId, user }, { populate: ['character'] })
   }
 
+  async getAll(user: User, characterId: number) {
+
+    const character = await this.em.getRepository(Character).findOne({ id: characterId });
+
+    let chats = await this.chatRepo.find({ user, character }, { populate: ['character'] })
+
+    return chats
+  }
+
+  async delete(chatId: number, user: User) {
+    const chat = await this.chatRepo.findOne({ id: chatId, user })
+    if (!chat) {
+      throw new NotFoundException()
+    }
+    await this.chatRepo.removeAndFlush(chat)
+  }
+
+  async create(characterId: number, user: User) {
+    const chat = new Chat()
+    chat.user = user
+    chat.character = this.em.getReference(Character, characterId)
+    await this.chatRepo.persistAndFlush(chat)
+    return chat;
+  }
+
   async clearMessage(chatId: number, user: User) {
     const chat = await this.chatRepo.findOne({ id: chatId, user });
     if (!chat) {
@@ -45,7 +70,7 @@ export class ChatService {
   async getUserLastChat(user: User, characterId: number) {
     const character = await this.em.getRepository(Character).findOne({ id: characterId });
 
-    let chat = await this.chatRepo.findOne({ user, character: characterId }, { populate: ['character'] })
+    let chat = await this.chatRepo.findOne({ user, character: characterId }, { populate: ['character'], orderBy: { id: 'desc' } })
     if (!chat) {
       chat = new Chat()
       chat.user = user

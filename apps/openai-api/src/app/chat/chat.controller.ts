@@ -1,9 +1,10 @@
-import { Body, Controller, Get, Param, ParseBoolPipe, Post, Query, Req, Res, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, ParseBoolPipe, Post, Query, Req, Res, UseGuards } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { ChatService } from "./chat.service";
 import { RolesGuard } from "../guards/roles.guard";
 import { Response } from "express";
+import { CreateChatDto } from "./dto/create.dto";
 
 @UseGuards(AuthGuard('jwt'), RolesGuard)
 @Controller('chat')
@@ -21,6 +22,30 @@ export class ChatController {
     @Req() { user }
   ) {
     return this.chatService.getUserLastChat(user, characterId)
+  }
+
+  @Post('')
+  createChat(
+   @Body() { characterId }: CreateChatDto,
+    @Req() { user }
+  ) {
+    return this.chatService.create(characterId, user)
+  }
+
+  @Get('')
+  getAllChats(
+    @Req() { user },
+    @Query('characterId') characterId: number,
+  ) {
+    return this.chatService.getAll(user, characterId)
+  }
+
+  @Delete(':id')
+  deleteChat(
+    @Param('id') chatId: number,
+    @Req() { user }
+  ) {
+    return this.chatService.delete(chatId, user)
   }
 
   @Get(':id')

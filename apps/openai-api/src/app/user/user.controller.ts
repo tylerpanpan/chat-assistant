@@ -39,36 +39,38 @@ export class UserController {
   }
 
   @Get('all')
+  @Roles(Role.Admin)
   async findAll() {
     return this.userService.findAll()
   }
 
   @Patch('change-password')
-  @Put('change-password')
-  async changePassword(@Request() req, @Body() dto: any) {
-    const user = await this.userService.findOne(+req.user.userId)
-    return this.userService.changePassword(user.id, dto.newPassword, dto.password)
+  async changePassword(@Req() { user }, @Body() dto: any) {
+    const u = await this.userService.findOne(user.id)
+    return this.userService.changePassword(u.id, dto.newPassword, dto.password)
   }
 
   @Patch(':id/reset-password')
+  @Roles(Role.Admin)
   async restPassword(@Param('id') id: string, @Body() dto: any) {
     const user = await this.userService.findOne(+id)
     this.userService.update(+id, { password: this.userService.createPassword(user.username, dto.password) })
   }
 
   @Get(':id')
+  @Roles(Role.Admin)
   findOne(@Param('id') id: string) {
     return this.userService.findOne(+id);
   }
 
   @Patch(':id')
+  @Roles(Role.Admin)
   update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
     return this.userService.update(+id, updateUserDto);
   }
 
-
-
   @Delete(':id')
+  @Roles(Role.Admin)
   remove(@Param('id') id: string) {
     return this.userService.remove(+id);
   }
@@ -85,7 +87,7 @@ export class UserController {
   bindGoogleAuth(@Request() req: any, @Body() dto: GoogleAuthDto) {
     const isValid = this.userService.verifyGoogleAuth(dto.token, dto.secret)
     if (isValid) {
-      this.userService.update(req.user.userId, { secret: dto.secret })
+      this.userService.update(req.user.id, { secret: dto.secret })
     } else {
       throw new HttpException('验证失败', 500)
     }
@@ -95,7 +97,7 @@ export class UserController {
   resetGoogleAuth(@Request() req: any, @Body() dto: GoogleAuthDto) {
     const isValid = this.userService.verifyGoogleAuth(dto.token, dto.secret)
     if (isValid) {
-      this.userService.update(req.user.userId, { secret: dto.secret })
+      this.userService.update(req.user.id, { secret: dto.secret })
     } else {
       throw new HttpException('验证失败', 500)
     }
@@ -103,7 +105,7 @@ export class UserController {
 
   @Get('google/reset')
   async getResetSecret(@Request() req: any, @Body() dto: GoogleAuthDto) {
-    const user = await this.userService.findOne(req.user.userId);
+    const user = await this.userService.findOne(req.user.id);
     const isValid = this.userService.verifyGoogleAuth(dto.token, user.secret)
     if (isValid) {
       const secret = this.userService.createGoogleSecret()

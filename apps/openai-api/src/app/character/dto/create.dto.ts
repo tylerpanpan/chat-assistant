@@ -26,4 +26,9 @@ export class CreateCharacterDto {
     required: false
   })
   presetQuestions: string[];
+
+  @ApiProperty({
+    required: false
+  })
+  description?: string;
 }
