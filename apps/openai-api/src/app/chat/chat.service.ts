@@ -141,7 +141,10 @@ export class ChatService {
           handleNewToken(token)
         }
       })
-    }, { basePath: this.configService.get('system.openAiBasePath') })
+    }, { 
+      basePath: this.configService.get('system.openAiBasePath'),
+      organization: this.configService.get('system.openAiOrgId')
+    })
 
     const chain = new ConversationChain({
       memory,
