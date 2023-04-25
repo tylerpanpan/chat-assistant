@@ -12,13 +12,13 @@ interface AuthContextType {
   user?: any;
   login: (token: string, user: any) => void;
   logout: () => void;
-  showLogin: () => void;
+  showLogin: (type?: boolean) => void;
 }
 const AuthContext = React.createContext<AuthContextType>({
   authed: false,
   login: (token, user) => {},
   logout: () => {},
-  showLogin: () => {},
+  showLogin: (type) => {},
 });
 
 export const AuthProvider: React.FC<{ children?: React.ReactNode }> = ({
@@ -27,6 +27,8 @@ export const AuthProvider: React.FC<{ children?: React.ReactNode }> = ({
   const [token, setToken] = useState<string>();
   const [user, setUser] = useState<any>();
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [isRegister, setIsRegister] = useState(false);
+
   useEffect(() => {
     try {
       const token = localStorage.getItem(STORE_TOKEN_KEY);
@@ -73,7 +75,8 @@ export const AuthProvider: React.FC<{ children?: React.ReactNode }> = ({
     localStorage.removeItem(STORE_USER_KEY);
   };
 
-  const showLogin = () => {
+  const showLogin = (type = false) => {
+    setIsRegister(!!type)
     setShowLoginModal(true)
   };
 
@@ -99,7 +102,7 @@ export const AuthProvider: React.FC<{ children?: React.ReactNode }> = ({
       }}
     >
       {children}
-      <LoginModal onClose={handleClose} open={showLoginModal} />
+      <LoginModal register={isRegister ? 1 : 0} onClose={handleClose} open={showLoginModal} />
     </AuthContext.Provider>
   );
 };

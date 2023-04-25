@@ -19,9 +19,11 @@ import { useAuth } from "apps/openai/src/app/provider/AuthProvider";
 import { useFeedback } from "../Feedback";
 import useAPI from "../../hooks/useAPI";
 import CloseIcon from "@mui/icons-material/Close";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-interface LoginModalProps extends DialogProps {}
+interface LoginModalProps extends DialogProps {
+  register?: number;
+}
 
 export function LoginModal({ ...props }: LoginModalProps) {
   const { login } = useAuth();
@@ -76,6 +78,10 @@ export function LoginModal({ ...props }: LoginModalProps) {
       const api = isRegister ? handleRegister(values) : handleLogin(values);
     },
   });
+
+  useEffect(() => {
+    setIsRegister(!!props.register)
+  }, [props.register])
 
   return (
     <Dialog {...props} fullScreen={isMobile}>
