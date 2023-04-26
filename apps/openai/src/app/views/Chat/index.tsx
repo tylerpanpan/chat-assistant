@@ -68,6 +68,7 @@ export function Chat() {
   const chatEndRef = useRef<HTMLDivElement>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [rechargeModalOpen, setRechargeModalOpen] = useState(false);
+  const [presetQuestions, setPresetQuestions] = useState<any[]>([]);
   
   useQuery(
     ["ipLogin"],
@@ -95,7 +96,10 @@ export function Chat() {
     () => chatApi.lastChat(characterId),
     { 
       enabled: !!token && !!characterId,
-      refetchOnWindowFocus: false
+      refetchOnWindowFocus: false,
+      onSuccess(data) {
+        setPresetQuestions(data.character.presetQuestions || [])
+      },
     }
   );
   const [showCreateCharacterModal, setShowCreateCharacterModal] = useState(false);
@@ -161,8 +165,8 @@ export function Chat() {
       })
   }
 
-  const handleSend = () => {
-    if (!text) {
+  const handleSend = (question?: string) => {
+    if (!text && !question) {
       return;
     }
     if (!token) {
@@ -177,7 +181,7 @@ export function Chat() {
       ...chats,
       {
         role: "user",
-        content: text,
+        content: question || text,
       },
       {
         role: "assistant",
@@ -186,7 +190,7 @@ export function Chat() {
       }
     ]);
     chatApi
-      .chat(chat.id, text, true)
+      .chat(chat.id, question || text, true)
       .then((response: any) => {
         const reader = response.body.getReader();
         const stream = new ReadableStream({
@@ -229,6 +233,7 @@ export function Chat() {
                 }
               ])
             }
+            setSending(false);
             return;
           }
           // 处理接收到的文本数据
@@ -239,11 +244,10 @@ export function Chat() {
             ...chats,
             {
               role: "user",
-              content: text,
+              content: question || text,
             },
             { role: "assistant", content: streamText }
           ]);
-          setSending(false);
           setText("");
           // 递归读取下一个文本块
           return textStream.read().then(processText);
@@ -395,7 +399,7 @@ export function Chat() {
     count,
     getScrollElement: () => chatEndRef.current,
     estimateSize: () => 100,
-    overscan: 5
+    overscan: 10
   })
   const items = virtualizer.getVirtualItems()
 
@@ -598,6 +602,15 @@ export function Chat() {
                 </Stack> */}
               </Box>
               <Box mx={2} my={1.5} position="relative">
+                {presetQuestions.length > 0 && <Box pt={1} borderTop="1px solid #dedede">
+                  <Stack direction="row" sx={{overflowY: 'auto', flexFlow: 'wrap'}}>
+                    {
+                      presetQuestions.map((question, index) => (
+                        <Button key={index} variant="outlined" size="small" sx={{whiteSpace: 'nowrap', marginRight: '10px', marginBottom: '8px'}} onClick={() => handleSend(question)}>{question}</Button>
+                      ))
+                    }
+                  </Stack>
+                </Box>}
                 <Stack direction="row">
                   <InputBase
                     value={text}
@@ -628,7 +641,7 @@ export function Chat() {
                   >
                     <Button
                       variant="contained"
-                      onClick={handleSend}
+                      onClick={() => handleSend()}
                       disabled={!text || sending}
                       startIcon={sending ? <CircularProgress size="16px" /> : <SendIcon />}
                     >发送</Button>
