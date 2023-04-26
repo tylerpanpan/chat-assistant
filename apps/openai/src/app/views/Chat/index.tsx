@@ -128,7 +128,7 @@ export function Chat() {
   }, [characters, characterId]);
 
   const [chats, setChats] = useState<
-    { role: "user" | "assistant" | "recharge"; content: string; loading?: boolean }[]
+    { role: "user" | "assistant" | "recharge" | "guest"; content: string; loading?: boolean }[]
   >([]);
 
   const currentCharacter = characters?.find(
@@ -219,8 +219,13 @@ export function Chat() {
               ])
             } 
             if (response.status === 403) {
-              setChats([...chats])
-              showToast('您已达到10次使用限制，请登录或注册继续体验')
+              setChats([
+                {
+                  'role': 'guest',
+                  'content': '您已达到10次使用限制',
+                },
+                ...chats
+              ])
             }
             return;
           }
@@ -444,7 +449,7 @@ export function Chat() {
               width="100%"
               justifyContent="space-between"
             >
-              <Box p={2} color="#303030" width="100%" borderBottom="1px solid rgba(0, 0, 0, .1)">
+              <Box p={2} color="#303030" width="100%" height="75px" borderBottom="1px solid rgba(0, 0, 0, .1)">
                 <Stack
                   direction="row"
                   justifyContent="space-between"
@@ -462,12 +467,12 @@ export function Chat() {
                       )}
                     </IconButton>
                   </Box>
-                  <Box>
+                  <Box height="32px">
                     <Typography variant="h6">
-                      {currentCharacter?.name || "请选择或创建一个角色"}
+                      {currentCharacter?.name || ""}
                     </Typography>
                   </Box>
-                  <Box width="44px">
+                  <Box width="44px" height="42px">
                     {token && chat && (
                       <Tooltip title="清空信息">
                         <IconButton sx={{ border: '1px solid #dedede' }} onClick={handleClearMessage}>
@@ -483,8 +488,15 @@ export function Chat() {
                   {chats?.map((chat, index: number) => {
                     if(chat.role === 'recharge'){
                       return (
-                        <Box  color="#303030" display="flex" justifyContent="center" alignItems="center" p={2}>
-                          余额不足，请前往<Button onClick={()=> setRechargeModalOpen(true)} style={{fontSize: '18px'}}>充值</Button>
+                        <Box key={index} color="#303030" display="flex" justifyContent="center" alignItems="center" p={2}>
+                          余额不足，请前往<Typography variant="button" onClick={()=> setRechargeModalOpen(true)} style={{margin: '0 6px', fontSize: '16px', cursor: 'pointer', color: '#1976d2'}}>充值</Typography>
+                        </Box>
+                      )
+                    }
+                    if(chat.role === 'guest'){
+                      return (
+                        <Box key={index} color="#303030" display="flex" justifyContent="center" alignItems="center" p={2}>
+                          您已达到10次使用限制，请 <Typography variant="button" onClick={()=> showLogin()} style={{margin: '0 6px', fontSize: '16px', cursor: 'pointer', color: '#1976d2'}}>登录</Typography> 或 <Typography variant="button" onClick={()=> showLogin(true)} style={{margin: '0 6px', fontSize: '16px', cursor: 'pointer', color: '#1976d2'}}>注册</Typography>
                         </Box>
                       )
                     }
