@@ -27,6 +27,7 @@ import MenuIcon from "@mui/icons-material/Menu";
 import MenuOpenIcon from "@mui/icons-material/MenuOpen";
 import LogoutSharpIcon from '@mui/icons-material/LogoutSharp';
 import { RechargeModal } from "../../components/RechargeModal";
+import { useVirtualizer } from '@tanstack/react-virtual'
 import MarkdownIt from "markdown-it";
 import mdKatex from "@traptitech/markdown-it-katex";
 import mila from "markdown-it-link-attributes";
@@ -115,7 +116,8 @@ export function Chat() {
       enabled: !!chat,
       refetchOnWindowFocus: false,
       onSuccess: (data) => {
-        setChats(data);
+        const reverseData = [...data].reverse()
+        setChats(reverseData)
       },
     }
   );
@@ -172,16 +174,16 @@ export function Chat() {
     }
     setSending(true);
     setChats([
-      {
-        role: "assistant",
-        content: "",
-        loading: true,
-      },
+      ...chats,
       {
         role: "user",
         content: text,
       },
-      ...chats,
+      {
+        role: "assistant",
+        content: "",
+        loading: true,
+      }
     ]);
     chatApi
       .chat(chat.id, text, true)
@@ -211,20 +213,20 @@ export function Chat() {
             console.log('Stream complete', streamText);
             if (response.status === 402) {
               setChats([
+                ...chats,
                 {
                   'role': 'recharge',
                   'content': 'Tokens不足，请充值',
-                },
-                ...chats
+                }
               ])
             } 
             if (response.status === 403) {
               setChats([
+                ...chats,
                 {
                   'role': 'guest',
                   'content': '您已达到10次使用限制',
-                },
-                ...chats
+                }
               ])
             }
             return;
@@ -234,12 +236,12 @@ export function Chat() {
           streamText += _value
 
           setChats([
-            { role: "assistant", content: streamText },
+            ...chats,
             {
               role: "user",
               content: text,
             },
-            ...chats,
+            { role: "assistant", content: streamText }
           ]);
           setSending(false);
           setText("");
@@ -252,11 +254,11 @@ export function Chat() {
         console.info(e.response)
         if (e.response.status === 402) {
           setChats([
+            ...chats,
             {
               'role': 'recharge',
               'content': 'Tokens不足，请充值',
-            },
-            ...chats
+            }
           ])
         } else {
           showToast(e.message);
@@ -334,12 +336,6 @@ export function Chat() {
     });
   };
 
-  useEffect(() => {
-    if (chatEndRef.current) {
-      chatEndRef.current.scrollTop = chatEndRef.current.scrollHeight;
-    }
-  }, [chats, chatEndRef]);
-
   const DrawerContent = useCallback(() => (
     <Box width={drawerWidth} p={1.5} height="100%">
       <Stack direction={"column"} sx={{ height: "100%" }}>
@@ -392,6 +388,23 @@ export function Chat() {
       </Stack>
     </Box>
   ), [token, userInfo, characterId, characters]);
+
+  // 虚拟滚动相关
+  const count = chats.length
+  const virtualizer = useVirtualizer({
+    count,
+    getScrollElement: () => chatEndRef.current,
+    estimateSize: () => 100,
+    overscan: 5
+  })
+  const items = virtualizer.getVirtualItems()
+
+  useEffect(() => {
+    if (chatEndRef.current && chats.length) {
+      // virtualizer.scrollToIndex(chats.length - 1)
+      chatEndRef.current.scrollTop = chatEndRef.current.scrollHeight + 300;
+    }
+  }, [chats, chatEndRef]);
 
   return (
     <>
@@ -483,8 +496,60 @@ export function Chat() {
                   </Box>
                 </Stack>
               </Box>
-              <Box p={2} height="100%" overflow={"scroll"} ref={chatEndRef}>
-                <Stack direction="column-reverse">
+              <Box ref={chatEndRef} p={2} height="100%" overflow={"scroll"}>
+                <Box height={virtualizer.getTotalSize()}>
+                  <Stack direction="column" sx={{transform: `translateY(${items[0] ? items[0].start : 0}px)`}}>
+                    {items.map((virtualRow) => {
+                      if(chats[virtualRow.index].role === 'recharge'){
+                        return (
+                          <Box ref={virtualizer.measureElement} key={virtualRow.key} color="#303030" display="flex" justifyContent="center" alignItems="center" p={2}>
+                            余额不足，请前往<Typography variant="button" onClick={()=> setRechargeModalOpen(true)} style={{margin: '0 6px', fontSize: '16px', cursor: 'pointer', color: '#1976d2'}}>充值</Typography>
+                          </Box>
+                        )
+                      }
+                      if(chats[virtualRow.index].role === 'guest'){
+                        return (
+                          <Box ref={virtualizer.measureElement} key={virtualRow.key} color="#303030" display="flex" justifyContent="center" alignItems="center" p={2}>
+                            您已达到10次使用限制，请 <Typography variant="button" onClick={()=> showLogin()} style={{margin: '0 6px', fontSize: '16px', cursor: 'pointer', color: '#1976d2'}}>登录</Typography> 或 <Typography variant="button" onClick={()=> showLogin(true)} style={{margin: '0 6px', fontSize: '16px', cursor: 'pointer', color: '#1976d2'}}>注册</Typography>
+                          </Box>
+                        )
+                      }
+                      return (
+                        <Box
+                          display={'flex'}
+                          data-index={virtualRow.index}
+                          ref={virtualizer.measureElement}
+                          key={virtualRow.key}
+                          bgcolor={chats[virtualRow.index].role === "user" ? "#e7f8ff" : "rgba(0, 0, 0, .05)"}
+                          border="1px solid #dedede"
+                          color="#24292f"
+                          borderRadius="10px"
+                          p={1}
+                          pl={2}
+                          pr={2}
+                          mb={1}
+                          mt={1}
+                          ml={chats[virtualRow.index].role === "user" ? "auto" : 0}
+                          mr={chats[virtualRow.index].role === "user" ? 0 : "15%"}
+                          letterSpacing={"1.2px"}
+                          onClick={() => copyText(chats[virtualRow.index])}
+                        >
+                          {chats[virtualRow.index].loading ? (
+                            <Skeleton
+                              sx={{
+                                width: "210px",
+                                bgcolor: "grey.400",
+                              }}
+                            ></Skeleton>
+                          ) : (
+                            <Box className="chat-box" dangerouslySetInnerHTML={{__html: mdi.render(chats[virtualRow.index].content)}}></Box>
+                          )}
+                        </Box>
+                      )})
+                    }
+                  </Stack>
+                </Box>
+                {/* <Stack direction="column-reverse">
                   {chats?.map((chat, index: number) => {
                     if(chat.role === 'recharge'){
                       return (
@@ -530,7 +595,7 @@ export function Chat() {
                       </Box>
                     );
                   })}
-                </Stack>
+                </Stack> */}
               </Box>
               <Box mx={2} my={1.5} position="relative">
                 <Stack direction="row">
