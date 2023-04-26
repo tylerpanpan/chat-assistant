@@ -80,12 +80,6 @@ export const AuthProvider: React.FC<{ children?: React.ReactNode }> = ({
     setShowLoginModal(true)
   };
 
-  useEffect(()=> {
-    if(token){
-      setShowLoginModal(false)
-    }
-  },[token])
-
   const handleClose = () => {
     setShowLoginModal(false)
   }

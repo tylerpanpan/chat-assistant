@@ -4,7 +4,6 @@ import { QueryClientProvider, QueryClient } from 'react-query';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { CssBaseline } from '@mui/material';
 import Chat from './views/Chat';
-import Registry from './views/Registry';
 import { AuthProvider } from './provider/AuthProvider';
 import FeedbackProvider from './components/Feedback';
 
@@ -19,16 +18,6 @@ export function App() {
           index: true,
           path: '',
           element: <Chat />,
-        },
-      ],
-    },
-    {
-      path: '/registry',
-      children: [
-        {
-          index: true,
-          path: '',
-          element: <Registry />,
         },
       ],
     }

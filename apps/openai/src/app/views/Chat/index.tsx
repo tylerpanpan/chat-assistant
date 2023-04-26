@@ -16,6 +16,7 @@ import {
 import { Box, Stack, useTheme } from "@mui/system";
 import SendIcon from "@mui/icons-material/Send";
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import ShareOutlinedIcon from '@mui/icons-material/ShareOutlined';
 import { useEffect, useCallback, useMemo, useRef, useState } from "react";
 import { useQuery } from "react-query";
 import { useAuth } from "../../provider/AuthProvider";
@@ -27,6 +28,7 @@ import MenuIcon from "@mui/icons-material/Menu";
 import MenuOpenIcon from "@mui/icons-material/MenuOpen";
 import LogoutSharpIcon from '@mui/icons-material/LogoutSharp';
 import { RechargeModal } from "../../components/RechargeModal";
+import { useVirtualizer } from '@tanstack/react-virtual'
 import MarkdownIt from "markdown-it";
 import mdKatex from "@traptitech/markdown-it-katex";
 import mila from "markdown-it-link-attributes";
@@ -36,6 +38,14 @@ import "highlight.js/styles/atom-one-dark.css";
 import './index.scss';
 
 const drawerWidth = 320;
+
+const getUrlParams = (url: string) => {
+  const u = new URL(url);
+  const s = new URLSearchParams(u.search);
+  const obj: any = {};
+  s.forEach((v, k) => (obj[k] = v));
+  return obj;
+}
 
 function highlightBlock(str: string, lang?: string) {
   return `<pre class="code-block-wrapper"><code class="hljs code-block-body ${lang}">${str}</code></pre>`
@@ -67,6 +77,18 @@ export function Chat() {
   const chatEndRef = useRef<HTMLDivElement>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [rechargeModalOpen, setRechargeModalOpen] = useState(false);
+  const [presetQuestions, setPresetQuestions] = useState<any[]>([]);
+
+  useEffect(() => {
+    const urlQuery = getUrlParams(location.href)
+    if (urlQuery.invite) {
+      const _token = localStorage.getItem('__app_token')
+      const _user: any = localStorage.getItem('__app_user')
+      if (!_token || !JSON.parse(_user).username) {
+        showLogin(true)
+      }
+    }
+  }, [])
   
   useQuery(
     ["ipLogin"],
@@ -94,7 +116,10 @@ export function Chat() {
     () => chatApi.lastChat(characterId),
     { 
       enabled: !!token && !!characterId,
-      refetchOnWindowFocus: false
+      refetchOnWindowFocus: false,
+      onSuccess(data) {
+        setPresetQuestions(data.character.presetQuestions || [])
+      },
     }
   );
   const [showCreateCharacterModal, setShowCreateCharacterModal] = useState(false);
@@ -115,7 +140,8 @@ export function Chat() {
       enabled: !!chat,
       refetchOnWindowFocus: false,
       onSuccess: (data) => {
-        setChats(data);
+        const reverseData = [...data].reverse()
+        setChats(reverseData)
       },
     }
   );
@@ -159,8 +185,8 @@ export function Chat() {
       })
   }
 
-  const handleSend = () => {
-    if (!text) {
+  const handleSend = (question?: string) => {
+    if (!text && !question) {
       return;
     }
     if (!token) {
@@ -172,19 +198,19 @@ export function Chat() {
     }
     setSending(true);
     setChats([
+      ...chats,
+      {
+        role: "user",
+        content: question || text,
+      },
       {
         role: "assistant",
         content: "",
         loading: true,
-      },
-      {
-        role: "user",
-        content: text,
-      },
-      ...chats,
+      }
     ]);
     chatApi
-      .chat(chat.id, text, true)
+      .chat(chat.id, question || text, true)
       .then((response: any) => {
         const reader = response.body.getReader();
         const stream = new ReadableStream({
@@ -211,22 +237,23 @@ export function Chat() {
             console.log('Stream complete', streamText);
             if (response.status === 402) {
               setChats([
+                ...chats,
                 {
                   'role': 'recharge',
                   'content': 'Tokens不足，请充值',
-                },
-                ...chats
+                }
               ])
             } 
             if (response.status === 403) {
               setChats([
+                ...chats,
                 {
                   'role': 'guest',
                   'content': '您已达到10次使用限制',
-                },
-                ...chats
+                }
               ])
             }
+            setSending(false);
             return;
           }
           // 处理接收到的文本数据
@@ -234,14 +261,13 @@ export function Chat() {
           streamText += _value
 
           setChats([
-            { role: "assistant", content: streamText },
+            ...chats,
             {
               role: "user",
-              content: text,
+              content: question || text,
             },
-            ...chats,
+            { role: "assistant", content: streamText }
           ]);
-          setSending(false);
           setText("");
           // 递归读取下一个文本块
           return textStream.read().then(processText);
@@ -252,11 +278,11 @@ export function Chat() {
         console.info(e.response)
         if (e.response.status === 402) {
           setChats([
+            ...chats,
             {
               'role': 'recharge',
               'content': 'Tokens不足，请充值',
-            },
-            ...chats
+            }
           ])
         } else {
           showToast(e.message);
@@ -265,7 +291,7 @@ export function Chat() {
   };
 
   const handleKeyDown = (e: any) => {
-    if (e.key === "Enter") {
+    if (e.keyCode === 13) {
       handleSend();
     }
   };
@@ -283,6 +309,10 @@ export function Chat() {
     setCurCharacter(null)
     setShowCreateCharacterModal(true);
   };
+
+  const handleShare = () => {
+    copyToClipboard('https://grzl.ai/', true)
+  }
 
   const handleClearMessage = () => {
     if (!token) {
@@ -302,14 +332,18 @@ export function Chat() {
     });
   };
 
-  function copyToClipboard(text: string) {
+  function copyToClipboard(text: string, isShare = false) {
     const dummy = document.createElement("textarea");
     document.body.appendChild(dummy);
-    dummy.value = text + `\nAI个人助理：https://grzl.ai`;
+    if (isShare) {
+      dummy.value = text + `?invite=${userInfo?.id}`;
+    } else {
+      dummy.value = text + `\nAI个人助理：https://grzl.ai`;
+    }
     dummy.select();
     document.execCommand("copy");
     document.body.removeChild(dummy);
-    showToast("已拷贝到剪贴板");
+    showToast(isShare ? "分享链接已拷贝到剪贴板" : "已拷贝到剪贴板");
   }
 
   const copyText = (data: any) => {
@@ -333,12 +367,6 @@ export function Chat() {
       }
     });
   };
-
-  useEffect(() => {
-    if (chatEndRef.current) {
-      chatEndRef.current.scrollTop = chatEndRef.current.scrollHeight;
-    }
-  }, [chats, chatEndRef]);
 
   const DrawerContent = useCallback(() => (
     <Box width={drawerWidth} p={1.5} height="100%">
@@ -392,6 +420,23 @@ export function Chat() {
       </Stack>
     </Box>
   ), [token, userInfo, characterId, characters]);
+
+  // 虚拟滚动相关
+  const count = chats.length
+  const virtualizer = useVirtualizer({
+    count,
+    getScrollElement: () => chatEndRef.current,
+    estimateSize: () => 100,
+    overscan: 10
+  })
+  const items = virtualizer.getVirtualItems()
+
+  useEffect(() => {
+    if (chatEndRef.current && chats.length) {
+      // virtualizer.scrollToIndex(chats.length - 1)
+      chatEndRef.current.scrollTop = chatEndRef.current.scrollHeight + 300;
+    }
+  }, [chats, chatEndRef]);
 
   return (
     <>
@@ -472,7 +517,7 @@ export function Chat() {
                       {currentCharacter?.name || ""}
                     </Typography>
                   </Box>
-                  <Box width="44px" height="42px">
+                  <Box height="42px">
                     {token && chat && (
                       <Tooltip title="清空信息">
                         <IconButton sx={{ border: '1px solid #dedede' }} onClick={handleClearMessage}>
@@ -480,11 +525,70 @@ export function Chat() {
                         </IconButton>
                       </Tooltip>
                     )}
+                    {token && userInfo?.username && (
+                      <Tooltip title="分享得积分">
+                        <IconButton sx={{ border: '1px solid #dedede', marginLeft: '10px' }} onClick={handleShare}>
+                          <ShareOutlinedIcon />
+                        </IconButton>
+                      </Tooltip>
+                    )}
                   </Box>
                 </Stack>
               </Box>
-              <Box p={2} height="100%" overflow={"scroll"} ref={chatEndRef}>
-                <Stack direction="column-reverse">
+              <Box ref={chatEndRef} p={2} height="100%" overflow={"scroll"}>
+                <Box height={virtualizer.getTotalSize()}>
+                  <Stack direction="column" sx={{transform: `translateY(${items[0] ? items[0].start : 0}px)`}}>
+                    {items.map((virtualRow) => {
+                      if(chats[virtualRow.index].role === 'recharge'){
+                        return (
+                          <Box ref={virtualizer.measureElement} key={virtualRow.key} color="#303030" display="flex" justifyContent="center" alignItems="center" p={2}>
+                            余额不足，请前往<Typography variant="button" onClick={()=> setRechargeModalOpen(true)} style={{margin: '0 6px', fontSize: '16px', cursor: 'pointer', color: '#1976d2'}}>充值</Typography>
+                          </Box>
+                        )
+                      }
+                      if(chats[virtualRow.index].role === 'guest'){
+                        return (
+                          <Box ref={virtualizer.measureElement} key={virtualRow.key} color="#303030" display="flex" justifyContent="center" alignItems="center" p={2}>
+                            您已达到10次使用限制，请 <Typography variant="button" onClick={()=> showLogin()} style={{margin: '0 6px', fontSize: '16px', cursor: 'pointer', color: '#1976d2'}}>登录</Typography> 或 <Typography variant="button" onClick={()=> showLogin(true)} style={{margin: '0 6px', fontSize: '16px', cursor: 'pointer', color: '#1976d2'}}>注册</Typography>
+                          </Box>
+                        )
+                      }
+                      return (
+                        <Box
+                          display={'flex'}
+                          data-index={virtualRow.index}
+                          ref={virtualizer.measureElement}
+                          key={virtualRow.key}
+                          bgcolor={chats[virtualRow.index].role === "user" ? "#e7f8ff" : "rgba(0, 0, 0, .05)"}
+                          border="1px solid #dedede"
+                          color="#24292f"
+                          borderRadius="10px"
+                          p={1}
+                          pl={2}
+                          pr={2}
+                          mb={1}
+                          mt={1}
+                          ml={chats[virtualRow.index].role === "user" ? "auto" : 0}
+                          mr={chats[virtualRow.index].role === "user" ? 0 : "15%"}
+                          letterSpacing={"1.2px"}
+                          onClick={() => copyText(chats[virtualRow.index])}
+                        >
+                          {chats[virtualRow.index].loading ? (
+                            <Skeleton
+                              sx={{
+                                width: "210px",
+                                bgcolor: "grey.400",
+                              }}
+                            ></Skeleton>
+                          ) : (
+                            <Box className="chat-box" dangerouslySetInnerHTML={{__html: mdi.render(chats[virtualRow.index].content)}}></Box>
+                          )}
+                        </Box>
+                      )})
+                    }
+                  </Stack>
+                </Box>
+                {/* <Stack direction="column-reverse">
                   {chats?.map((chat, index: number) => {
                     if(chat.role === 'recharge'){
                       return (
@@ -530,9 +634,18 @@ export function Chat() {
                       </Box>
                     );
                   })}
-                </Stack>
+                </Stack> */}
               </Box>
               <Box mx={2} my={1.5} position="relative">
+                {presetQuestions.length > 0 && <Box pt={1} borderTop="1px solid #dedede">
+                  <Stack direction="row" sx={{overflowY: 'auto', flexFlow: 'wrap'}}>
+                    {
+                      presetQuestions.map((question, index) => (
+                        <Button key={index} variant="outlined" size="small" sx={{whiteSpace: 'nowrap', marginRight: '10px', marginBottom: '8px'}} onClick={() => handleSend(question)}>{question}</Button>
+                      ))
+                    }
+                  </Stack>
+                </Box>}
                 <Stack direction="row">
                   <InputBase
                     value={text}
@@ -563,7 +676,7 @@ export function Chat() {
                   >
                     <Button
                       variant="contained"
-                      onClick={handleSend}
+                      onClick={() => handleSend()}
                       disabled={!text || sending}
                       startIcon={sending ? <CircularProgress size="16px" /> : <SendIcon />}
                     >发送</Button>
