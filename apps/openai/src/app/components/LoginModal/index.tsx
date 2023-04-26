@@ -11,6 +11,7 @@ import {
   useMediaQuery,
   useTheme,
   Box,
+  Typography
 } from "@mui/material";
 
 import * as yup from "yup";
@@ -30,6 +31,7 @@ export function LoginModal({ ...props }: LoginModalProps) {
   const { showToast } = useFeedback();
   const { userApi } = useAPI();
   const [isRegister, setIsRegister] = useState(false);
+  const [inviteId, setInviteId] = useState()
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const validation = yup.object({
@@ -44,6 +46,8 @@ export function LoginModal({ ...props }: LoginModalProps) {
     userApi
       .login(values.username, values.password)
       .then((res) => {
+        props.onClose?.({}, "escapeKeyDown")
+        history.pushState('', '', '/')
         login(res.access_token, res.user);
       })
       .catch((e) => {
@@ -56,7 +60,7 @@ export function LoginModal({ ...props }: LoginModalProps) {
 
   const handleRegister = (values: any) => {
     userApi
-      .register(values.username, values.password)
+      .register(values.username, values.password, values.referUserId)
       .then((res) => {
         handleLogin(values);
       })
@@ -72,6 +76,7 @@ export function LoginModal({ ...props }: LoginModalProps) {
     initialValues: {
       username: "",
       password: "",
+      referUserId: ""
     },
     validationSchema: validation,
     onSubmit: (values) => {
@@ -79,7 +84,20 @@ export function LoginModal({ ...props }: LoginModalProps) {
     },
   });
 
+  const getUrlParams = (url: string) => {
+    const u = new URL(url);
+    const s = new URLSearchParams(u.search);
+    const obj: any = {};
+    s.forEach((v, k) => (obj[k] = v));
+    return obj;
+  }
+
   useEffect(() => {
+    const urlQuery = getUrlParams(location.href)
+    if (urlQuery.invite) {
+      setInviteId(urlQuery.invite)
+      formik.values.referUserId = urlQuery.invite
+    }
     setIsRegister(!!props.register)
   }, [props.register])
 
@@ -154,6 +172,14 @@ export function LoginModal({ ...props }: LoginModalProps) {
                 }
                 helperText={formik.touched.password && formik.errors.password}
               />
+              {inviteId && isRegister && <TextField
+                id="referUserId"
+                name="referUserId"
+                label="邀请码"
+                margin="normal"
+                value={formik.values.referUserId}
+                onChange={formik.handleChange}
+              />}
             </Stack>
             <Button onClick={() => setIsRegister(!isRegister)}>
               {isRegister ? "登录" : "账号注册"}
@@ -164,7 +190,7 @@ export function LoginModal({ ...props }: LoginModalProps) {
       <DialogActions>
         <Button
           sx={{
-            margin: '0 15px 10px'
+            margin: '0 15px 5px'
           }}
           fullWidth
           variant="contained"
@@ -173,6 +199,7 @@ export function LoginModal({ ...props }: LoginModalProps) {
           {isRegister ? "注册" : "登录"}
         </Button>
       </DialogActions>
+      {isRegister && <Typography sx={{textAlign: "center", marginBottom: "10px"}}>注册可获得500积分（≈ 140次问答）</Typography>}
     </Dialog>
   );
 }

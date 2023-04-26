@@ -16,6 +16,7 @@ import {
 import { Box, Stack, useTheme } from "@mui/system";
 import SendIcon from "@mui/icons-material/Send";
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import ShareOutlinedIcon from '@mui/icons-material/ShareOutlined';
 import { useEffect, useCallback, useMemo, useRef, useState } from "react";
 import { useQuery } from "react-query";
 import { useAuth } from "../../provider/AuthProvider";
@@ -37,6 +38,14 @@ import "highlight.js/styles/atom-one-dark.css";
 import './index.scss';
 
 const drawerWidth = 320;
+
+const getUrlParams = (url: string) => {
+  const u = new URL(url);
+  const s = new URLSearchParams(u.search);
+  const obj: any = {};
+  s.forEach((v, k) => (obj[k] = v));
+  return obj;
+}
 
 function highlightBlock(str: string, lang?: string) {
   return `<pre class="code-block-wrapper"><code class="hljs code-block-body ${lang}">${str}</code></pre>`
@@ -69,6 +78,17 @@ export function Chat() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [rechargeModalOpen, setRechargeModalOpen] = useState(false);
   const [presetQuestions, setPresetQuestions] = useState<any[]>([]);
+
+  useEffect(() => {
+    const urlQuery = getUrlParams(location.href)
+    if (urlQuery.invite) {
+      const _token = localStorage.getItem('__app_token')
+      const _user: any = localStorage.getItem('__app_user')
+      if (!_token || !JSON.parse(_user).username) {
+        showLogin(true)
+      }
+    }
+  }, [])
   
   useQuery(
     ["ipLogin"],
@@ -271,7 +291,7 @@ export function Chat() {
   };
 
   const handleKeyDown = (e: any) => {
-    if (e.key === "Enter") {
+    if (e.keyCode === 13) {
       handleSend();
     }
   };
@@ -289,6 +309,10 @@ export function Chat() {
     setCurCharacter(null)
     setShowCreateCharacterModal(true);
   };
+
+  const handleShare = () => {
+    copyToClipboard('https://grzl.ai/', true)
+  }
 
   const handleClearMessage = () => {
     if (!token) {
@@ -308,14 +332,18 @@ export function Chat() {
     });
   };
 
-  function copyToClipboard(text: string) {
+  function copyToClipboard(text: string, isShare = false) {
     const dummy = document.createElement("textarea");
     document.body.appendChild(dummy);
-    dummy.value = text + `\nAI个人助理：https://grzl.ai`;
+    if (isShare) {
+      dummy.value = text + `?invite=${userInfo?.id}`;
+    } else {
+      dummy.value = text + `\nAI个人助理：https://grzl.ai`;
+    }
     dummy.select();
     document.execCommand("copy");
     document.body.removeChild(dummy);
-    showToast("已拷贝到剪贴板");
+    showToast(isShare ? "分享链接已拷贝到剪贴板" : "已拷贝到剪贴板");
   }
 
   const copyText = (data: any) => {
@@ -489,11 +517,18 @@ export function Chat() {
                       {currentCharacter?.name || ""}
                     </Typography>
                   </Box>
-                  <Box width="44px" height="42px">
+                  <Box height="42px">
                     {token && chat && (
                       <Tooltip title="清空信息">
                         <IconButton sx={{ border: '1px solid #dedede' }} onClick={handleClearMessage}>
                           <DeleteOutlineIcon />
+                        </IconButton>
+                      </Tooltip>
+                    )}
+                    {token && userInfo?.username && (
+                      <Tooltip title="分享得积分">
+                        <IconButton sx={{ border: '1px solid #dedede', marginLeft: '10px' }} onClick={handleShare}>
+                          <ShareOutlinedIcon />
                         </IconButton>
                       </Tooltip>
                     )}
