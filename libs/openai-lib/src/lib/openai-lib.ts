@@ -1,7 +1,7 @@
-import { GPTChatModel } from '../enums/GPTModel';
 import { get_encoding } from '@dqbd/tiktoken'
 import { OpenAIApi, Configuration } from 'openai'
 import axios from 'axios'
+import { GPTModel } from '../enums/GPTModel';
 interface ChatResponse {
   id: string;
   object: string;
@@ -47,7 +47,7 @@ export class OpenAILib {
   async chat(message: Message[], stream: boolean = false, max_tokens = 2048) {
     return this.openai.createChatCompletion({
       messages: message,
-      model: GPTChatModel.GPT35TURBO0301,
+      model: GPTModel.GPT35TURBO0301,
       stream: true
     }, { responseType: 'stream' }).then((res: any) => {
       

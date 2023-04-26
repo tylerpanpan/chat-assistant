@@ -30,6 +30,7 @@ export class CharacterService {
 
   async createCharacter(user: User, dto: CreateCharacterDto) {
     const character = new Character();
+    character.avatar = dto.avatar;
     character.definition = dto.definition;
     character.user = user;
     character.name = dto.name;
@@ -48,7 +49,7 @@ export class CharacterService {
     if (user.id != character.user.id) {
       throw new NotFoundException('Character not found')
     }
-
+    character.avatar = dto.avatar;
     character.definition = dto.definition;
     character.name = dto.name;
     character.welcome = dto.welcome;
