@@ -9,4 +9,6 @@ export default registerAs('system', () => ({
   inviteRewardTokens: process.env.INVITE_REWARD_TOKENS,
   userDefaultTokens: process.env.USER_DEFAULT_TOKENS,
   openAiOrgId: process.env.OPENAI_ORG_ID,
+  speechKey: process.env.SPEECH_KEY,
+  speechRegion: process.env.SPEECH_REGION,
 }));

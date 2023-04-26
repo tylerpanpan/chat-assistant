@@ -16,6 +16,7 @@ import alipayConfig from '../config/alipay.config';
 import { OrderModule } from './order/order.module';
 import { UploadModule } from './upload/upload.module';
 import ossConfig from '../config/oss.config';
+import { SpeechModule } from './speech/speech.module';
 
 @Module({
   imports: [
@@ -56,7 +57,8 @@ import ossConfig from '../config/oss.config';
     CharacterModule,
     ChatModule,
     OrderModule,
-    UploadModule
+    UploadModule,
+    SpeechModule
   ],
   controllers: [AppController],
   providers: [AppService],
