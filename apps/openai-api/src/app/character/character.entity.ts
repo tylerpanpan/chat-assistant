@@ -1,5 +1,6 @@
-import { Entity, ManyToOne, PrimaryKey, Property } from '@mikro-orm/core'
+import { Entity, Enum, ManyToOne, PrimaryKey, Property } from '@mikro-orm/core'
 import { User } from '../user/entities/user.entity';
+import { GPTModel } from 'libs/openai-lib/src/enums/GPTModel';
 @Entity()
 export class Character {
 
@@ -17,6 +18,9 @@ export class Character {
 
   @Property({ type: 'text' })
   definition: string;
+
+  @Enum({items: () => GPTModel, nullable: true, default: GPTModel.GPT35TURBO0301})
+  model: GPTModel;
 
   @ManyToOne(() => User)
   user: User;

@@ -12,6 +12,7 @@ import { BufferMemory, ChatMessageHistory } from "langchain/memory";
 import { ConversationChain } from 'langchain/chains'
 import { ChatPromptTemplate, HumanMessagePromptTemplate, MessagesPlaceholder, SystemMessagePromptTemplate } from "langchain/prompts";
 import { CallbackManager } from "langchain/callbacks";
+import { GPTModel } from "libs/openai-lib/src/enums/GPTModel";
 
 
 @Injectable()
@@ -131,7 +132,7 @@ export class ChatService {
     const chatModel = new ChatOpenAI({
       openAIApiKey: this.configService.get('system.openAiKey'),
       streaming: stream,
-      modelName: 'gpt-3.5-turbo-0301',
+      modelName: chat.character.model || GPTModel.GPT35TURBO0301,
       callbackManager: CallbackManager.fromHandlers({
         handleLLMEnd: async (llmresult) => {
           const tokenUsage = llmresult.llmOutput?.tokenUsage
