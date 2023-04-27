@@ -41,6 +41,7 @@
     "highlight.js": "^11.7.0",
     "katex": "^0.16.4",
     "langchain": "^0.0.62",
+    "localforage": "^1.10.0",
     "markdown-it": "^13.0.1",
     "markdown-it-link-attributes": "^4.0.1",
     "moment": "^2.29.4",
