@@ -28,6 +28,7 @@ import MenuIcon from "@mui/icons-material/Menu";
 import MenuOpenIcon from "@mui/icons-material/MenuOpen";
 import LogoutSharpIcon from '@mui/icons-material/LogoutSharp';
 import { RechargeModal } from "../../components/RechargeModal";
+import localForage from "localforage";
 import { useVirtualizer } from '@tanstack/react-virtual'
 import MarkdownIt from "markdown-it";
 import mdKatex from "@traptitech/markdown-it-katex";
@@ -97,6 +98,7 @@ export function Chat() {
       enabled: !localStorage.getItem('__app_token'),
       refetchOnWindowFocus: false,
       onSuccess: (data) => {
+        localForage.setItem('character-chat', null)
         login(data.access_token, data.user)
       },
     }
@@ -118,6 +120,11 @@ export function Chat() {
       enabled: !!token && !!characterId,
       refetchOnWindowFocus: false,
       onSuccess(data) {
+        localForage.getItem('character-chat').then((mapData: any) => {
+          const characterChatMap = mapData || {}
+          characterChatMap[`${characterId}`] = data.id
+          localForage.setItem('character-chat', characterChatMap)
+        })
         setPresetQuestions(data.character.presetQuestions || [])
       },
     }
@@ -140,6 +147,7 @@ export function Chat() {
       enabled: !!chat,
       refetchOnWindowFocus: false,
       onSuccess: (data) => {
+        localForage.setItem(`${chat?.id}`, data)
         const reverseData = [...data].reverse()
         setChats(reverseData)
       },
@@ -147,9 +155,23 @@ export function Chat() {
   );
 
   useEffect(() => {
-    if (characters && !characterId) {
-      setCharacterId(characters[0].id);
-      setCurCharacter(characters[0])
+    if (characters) {
+      let _characterId: number;
+      if (!characterId) {
+        _characterId = characters[0].id;
+        setCharacterId(characters[0].id);
+        setCurCharacter(characters[0]);
+      } else {
+        _characterId = characterId;
+      }
+      localForage.getItem('character-chat').then((mapData: any) => {
+        mapData && localForage.getItem(mapData[_characterId]).then((data: any) => {
+          if (data) {
+            const reverseData = [...data].reverse();
+            setChats(reverseData);
+          }
+        });
+      });
     }
   }, [characters, characterId]);
 
@@ -164,6 +186,8 @@ export function Chat() {
   const handleChooseCharacter = (id: number) => () => {
     setMobileOpen(false);
     setCharacterId(id);
+    setChats([]);
+    setPresetQuestions([]);
   };
 
   const handleEditCharacter = (id: number) => () => {
@@ -178,6 +202,7 @@ export function Chat() {
       .then(() => {
         showToast('删除成功');
         if (id === characterId) {
+          setChats([])
           setCharacterId(null);
           setCurCharacter(null);
         }
@@ -360,6 +385,7 @@ export function Chat() {
     }
     showDialog("确定要退出登录吗?", "退出登录", "取消", "确定", (confirm) => {
       if (confirm == 1) {
+        localForage.setItem('character-chat', null)
         logout();
         setChats([]);
         setCharacterId(null);

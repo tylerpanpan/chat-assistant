@@ -3,6 +3,7 @@ import { useContext } from 'react';
 import { useNavigate } from 'react-router';
 import { useBlocker } from 'react-router/dist/lib/hooks';
 import { LoginModal } from '../components/LoginModal';
+import localForage from "localforage";
 const STORE_TOKEN_KEY = '__app_token';
 const STORE_USER_KEY = '__app_user';
 
@@ -66,6 +67,7 @@ export const AuthProvider: React.FC<{ children?: React.ReactNode }> = ({
     setUser(user);
     localStorage.setItem(STORE_TOKEN_KEY, token);
     localStorage.setItem(STORE_USER_KEY, JSON.stringify(user));
+    localForage.setItem('character-chat', null)
   };
 
   const logout = () => {
