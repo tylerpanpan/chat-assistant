@@ -20,4 +20,7 @@ export class Chat {
 
   @Property({type: 'int', nullable: true})
   totalTokens: number;
+
+  @Property({ type: 'datetime', onCreate: () => new Date(), nullable: true })
+  createdAt: Date;
 }

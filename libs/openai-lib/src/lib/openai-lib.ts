@@ -32,7 +32,7 @@ export interface Message {
   role: 'system' | 'user' | 'assistant';
   content: string;
   isDeleted?: boolean;
-  time?: number;
+  time?: string;
 }
 
 export class OpenAILib {
