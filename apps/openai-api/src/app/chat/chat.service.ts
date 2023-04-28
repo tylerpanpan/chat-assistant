@@ -105,7 +105,7 @@ export class ChatService {
     const userRepo = this.em.getRepository(User);
     const u = await userRepo.findOne({ id: user.id })
 
-
+    const time = moment().format('YYYY-MM-DD HH:mm')
     if (u.type === Role.Guest && user.messageCount >= (+this.configService.get('system.guestMessageLimit') || 10)) {
       throw new HttpException('You have reached the limit of messages', 403)
     }
@@ -189,7 +189,7 @@ export class ChatService {
 
     totalTokens = totalTokens || this.openaiLib.countMessageToken(this.openaiLib.buildMessages(text, chat.character.definition, filteredContext))
 
-    const newMessages = [...contexts, { role: 'user', content: text }, { role: 'assistant', content: response }]
+    const newMessages = [...contexts, { role: 'user', content: text, time }, { role: 'assistant', content: response, time: moment().format('YYYY-MM-DD HH:mm') }]
     chat.messages = newMessages as any
     chat.totalTokens += totalTokens || 0
     await this.chatRepo.flush()
