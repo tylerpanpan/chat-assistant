@@ -41,7 +41,7 @@ export class User {
   @ManyToOne(() => User, { nullable: true })
   referUser?: User;
 
-  @Property({ default: 5, nullable: true })
-  gpt4Limit: number = 5;
+  @Property({ default: 3, nullable: true })
+  gpt4Limit: number = 3;
 
 }

@@ -20,18 +20,22 @@ const prices = [
   {
     chats: 140,
     amount: 10,
+    gpt4: 2
   },
   {
     chats: 700,
     amount: 50,
+    gpt4: 10
   },
   {
     chats: 1400,
     amount: 100,
+    gpt4: 20
   },
   {
     chats: 7000,
     amount: 500,
+    gpt4: 100
   },
 ];
 
@@ -89,6 +93,9 @@ export function RechargeModal({ ...props }: DialogProps) {
 
                     <Typography variant="caption" color="#666" display="block">
                       ≈ {item.chats}次问答
+                    </Typography>
+                    <Typography variant="caption" color="#666" display="block">
+                      获得{item.gpt4}次GPT-4问答
                     </Typography>
                   </Box>
                 </Paper>

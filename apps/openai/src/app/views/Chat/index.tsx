@@ -8,9 +8,6 @@ import {
   Typography,
   Skeleton,
   Drawer,
-  AppBar,
-  Toolbar,
-  useMediaQuery,
   Tooltip,
 } from "@mui/material";
 import { Box, Stack, useTheme } from "@mui/system";
@@ -104,7 +101,7 @@ export function Chat() {
     }
   );
 
-  const { data: userInfo } = useQuery(
+  const { data: userInfo, refetch: refetchUserInfo } = useQuery(
     ["userinfo", token],
     () => userApi.userinfo(),
     {
@@ -176,7 +173,7 @@ export function Chat() {
   }, [characters, characterId]);
 
   const [chats, setChats] = useState<
-    { role: "user" | "assistant" | "recharge" | "guest"; content: string; loading?: boolean }[]
+    { role: "user" | "assistant" | "recharge" | "guest" | "gpt4limit"; content: string; loading?: boolean }[]
   >([]);
 
   const currentCharacter = characters?.find(
@@ -268,8 +265,7 @@ export function Chat() {
                   'content': 'Tokens不足，请充值',
                 }
               ])
-            } 
-            if (response.status === 403) {
+            } else if (response.status === 403) {
               setChats([
                 ...chats,
                 {
@@ -277,8 +273,23 @@ export function Chat() {
                   'content': '您已达到10次使用限制',
                 }
               ])
+            } else if (response.status === 419) {
+              setChats([
+                ...chats,
+                {
+                  'role': 'gpt4limit',
+                  'content': '您的GPT-4使用次数已耗尽，请邀请好友注册或充值获得更多次数',
+                }
+              ])
+            } else if (response.status >= 300 ) {
+              setChats([
+                ...chats
+              ])
+              showToast('现在业务繁忙，请稍后再试')
             }
+            console.info(response.status)
             setSending(false);
+            refetchUserInfo();
             return;
           }
           // 处理接收到的文本数据
@@ -424,6 +435,9 @@ export function Chat() {
                     充值
                   </Typography>}
                 </Box>
+                <Box>
+                  {userInfo?.username && <Typography variant="caption">GPT-4 可用次数：{userInfo.gpt4Limit || 0}</Typography>}
+                </Box>
               </Box>
             )}
             {token && userInfo?.username && (
@@ -520,7 +534,7 @@ export function Chat() {
               width="100%"
               justifyContent="space-between"
             >
-              <Box p={2} color="#303030" width="100%" height="75px" borderBottom="1px solid rgba(0, 0, 0, .1)">
+              <Box color="#303030" width="100%" p={1} borderBottom="1px solid rgba(0, 0, 0, .1)">
                 <Stack
                   direction="row"
                   justifyContent="space-between"
@@ -538,12 +552,16 @@ export function Chat() {
                       )}
                     </IconButton>
                   </Box>
-                  <Box height="32px">
-                    <Typography variant="h6">
-                      {currentCharacter?.name || ""}
-                    </Typography>
+                  <Box >
+                    <Stack sx={{minHeight: '60px'}} direction="column" justifyContent="center" alignItems="center">
+                      <Typography fontWeight="500">
+                        {currentCharacter?.name || ""}
+                      </Typography>
+                      {currentCharacter?.description && <Typography sx={{lineHeight: 1.2,marginTop: '5px'}} variant="caption">{currentCharacter?.description}</Typography>}
+                    
+                    </Stack>
                   </Box>
-                  <Box height="42px">
+                  <Box height="42px" flexShrink={0}>
                     {token && chat && (
                       <Tooltip title="清空信息">
                         <IconButton sx={{ border: '1px solid #dedede' }} onClick={handleClearMessage}>
@@ -578,6 +596,16 @@ export function Chat() {
                             您已达到10次使用限制，请 <Typography variant="button" onClick={()=> showLogin()} style={{margin: '0 6px', fontSize: '16px', cursor: 'pointer', color: '#1976d2'}}>登录</Typography> 或 <Typography variant="button" onClick={()=> showLogin(true)} style={{margin: '0 6px', fontSize: '16px', cursor: 'pointer', color: '#1976d2'}}>注册</Typography>
                           </Box>
                         )
+                      }
+                      if(chats[virtualRow.index].role === 'gpt4limit') {
+                        return <Box ref={virtualizer.measureElement} key={virtualRow.key} >
+                        <Box color="#303030" display="flex" justifyContent="center" alignItems="center" p={2}>
+                            您的GPT4使用次数已耗尽，请邀请好友注册或充值获得更多次数
+                        </Box>
+                         <Box display="flex" justifyContent="center" alignItems="center">
+                          <Typography variant="button" onClick={handleShare} style={{margin: '0 6px', fontSize: '16px', cursor: 'pointer', color: '#1976d2'}}>复制邀请链接</Typography>  <Typography variant="button" onClick={()=> setRechargeModalOpen(true)} style={{margin: '0 6px', fontSize: '16px', cursor: 'pointer', color: '#1976d2'}}>充值</Typography>
+                         </Box>
+                        </Box>
                       }
                       return (
                         <Box
