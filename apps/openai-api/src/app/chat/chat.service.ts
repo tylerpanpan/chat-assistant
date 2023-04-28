@@ -75,7 +75,7 @@ export class ChatService {
   async getUserLastChat(user: User, characterId: number) {
     const character = await this.em.getRepository(Character).findOne({ id: characterId });
 
-    let chat = await this.chatRepo.findOne({ user, character: characterId }, { populate: ['character'], orderBy: { id: 'desc' } })
+    let chat = await this.chatRepo.findOne({ user, character: characterId }, { populate: ['character'], orderBy: { 'updatedAt': 'desc',id: 'desc' } })
     if (!chat) {
       chat = new Chat()
       chat.user = user
