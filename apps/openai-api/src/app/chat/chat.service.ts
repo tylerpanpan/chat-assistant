@@ -187,7 +187,7 @@ export class ChatService {
 
     const { response } = await chain.call({ input: text });
 
-    totalTokens = totalTokens || this.openaiLib.countMessageToken(this.openaiLib.buildMessages(text, chat.character.definition, filteredContext))
+    totalTokens = totalTokens || this.openaiLib.countMessageToken([...this.openaiLib.buildMessages(text, chat.character.definition, filteredContext), { role: 'assistant', content: response }])
 
     const newMessages = [...contexts, { role: 'user', content: text, time }, { role: 'assistant', content: response, time: moment().format('YYYY-MM-DD HH:mm') }]
     chat.messages = newMessages as any
