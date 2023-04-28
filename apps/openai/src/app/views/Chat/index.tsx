@@ -581,86 +581,49 @@ export function Chat() {
                       }
                       return (
                         <Box
-                          display={'flex'}
                           data-index={virtualRow.index}
                           ref={virtualizer.measureElement}
                           key={virtualRow.key}
-                          bgcolor={chats[virtualRow.index].role === "user" ? "#e7f8ff" : "rgba(0, 0, 0, .05)"}
-                          border="1px solid #dedede"
-                          color="#24292f"
-                          borderRadius="10px"
-                          p={1}
-                          pl={2}
-                          pr={2}
-                          mb={1}
-                          mt={1}
+                          display={'flex'}
+                          py={2.5}
                           ml={chats[virtualRow.index].role === "user" ? "auto" : 0}
                           mr={chats[virtualRow.index].role === "user" ? 0 : "15%"}
-                          letterSpacing={"1.2px"}
-                          onClick={() => copyText(chats[virtualRow.index])}
                         >
-                          {chats[virtualRow.index].loading ? (
-                            <Skeleton
-                              sx={{
-                                width: "210px",
-                                bgcolor: "grey.400",
-                              }}
-                            ></Skeleton>
-                          ) : (
-                            <Box className="chat-box" dangerouslySetInnerHTML={{__html: mdi.render(chats[virtualRow.index].content)}}></Box>
-                          )}
+                          <Box
+                            className="chat-wrap"
+                            bgcolor={chats[virtualRow.index].role === "user" ? "#e7f8ff" : "rgba(0, 0, 0, .05)"}
+                            border="1px solid #dedede"
+                            borderRadius="10px"
+                            color="#24292f"
+                            px={2}
+                            py={1}
+                            letterSpacing={"1.2px"}
+                            position={'relative'}
+                          >
+                            {chats[virtualRow.index].role === "assistant" && (
+                              <Box
+                                className="chat-actions"
+                              >
+                                <Typography variant="caption" className="action-btn" onClick={() => copyText(chats[virtualRow.index])}>复制</Typography>
+                                {/* <Typography variant="caption" className="action-btn">删除</Typography> */}
+                              </Box>
+                            )}
+                            {chats[virtualRow.index].loading ? (
+                              <Skeleton
+                                sx={{
+                                  width: "210px",
+                                  bgcolor: "grey.400",
+                                }}
+                              ></Skeleton>
+                            ) : (
+                              <Box className="chat-box" dangerouslySetInnerHTML={{__html: mdi.render(chats[virtualRow.index].content)}}></Box>
+                            )}
+                          </Box>
                         </Box>
                       )})
                     }
                   </Stack>
                 </Box>
-                {/* <Stack direction="column-reverse">
-                  {chats?.map((chat, index: number) => {
-                    if(chat.role === 'recharge'){
-                      return (
-                        <Box key={index} color="#303030" display="flex" justifyContent="center" alignItems="center" p={2}>
-                          余额不足，请前往<Typography variant="button" onClick={()=> setRechargeModalOpen(true)} style={{margin: '0 6px', fontSize: '16px', cursor: 'pointer', color: '#1976d2'}}>充值</Typography>
-                        </Box>
-                      )
-                    }
-                    if(chat.role === 'guest'){
-                      return (
-                        <Box key={index} color="#303030" display="flex" justifyContent="center" alignItems="center" p={2}>
-                          您已达到10次使用限制，请 <Typography variant="button" onClick={()=> showLogin()} style={{margin: '0 6px', fontSize: '16px', cursor: 'pointer', color: '#1976d2'}}>登录</Typography> 或 <Typography variant="button" onClick={()=> showLogin(true)} style={{margin: '0 6px', fontSize: '16px', cursor: 'pointer', color: '#1976d2'}}>注册</Typography>
-                        </Box>
-                      )
-                    }
-                    return (
-                      <Box
-                        key={index}
-                        bgcolor={chat.role === "user" ? "#e7f8ff" : "rgba(0, 0, 0, .05)"}
-                        border="1px solid #dedede"
-                        color="#24292f"
-                        borderRadius="10px"
-                        p={1}
-                        pl={2}
-                        pr={2}
-                        mb={1}
-                        mt={1}
-                        ml={chat.role === "user" ? "auto" : 0}
-                        mr={chat.role === "user" ? 0 : "15%"}
-                        letterSpacing={"1.2px"}
-                        onClick={() => copyText(chat)}
-                      >
-                        {chat.loading ? (
-                          <Skeleton
-                            sx={{
-                              width: "210px",
-                              bgcolor: "grey.400",
-                            }}
-                          ></Skeleton>
-                        ) : (
-                          <Box className="chat-box" dangerouslySetInnerHTML={{__html: mdi.render(chat.content)}}></Box>
-                        )}
-                      </Box>
-                    );
-                  })}
-                </Stack> */}
               </Box>
               <Box mx={2} my={1.5} position="relative">
                 {presetQuestions.length > 0 && <Box pt={1} borderTop="1px solid #dedede">
