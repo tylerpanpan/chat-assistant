@@ -14,6 +14,7 @@ interface ChatContentProps {
   chats: any[];
   userInfo: any;
 	onRecharge: () => void;
+  onShare: () => void;
 }
 
 function highlightBlock(str: string, lang?: string) {
@@ -38,7 +39,8 @@ mdi.use(mdKatex, { blockClass: 'katexmath-block rounded-md p-[10px]', errorColor
 export function ChatContent({
 	chats,
   userInfo,
-	onRecharge
+	onRecharge,
+  onShare
 }: ChatContentProps) {
 	const { showToast } = useFeedback();
 	const { showLogin } = useAuth();
@@ -98,6 +100,16 @@ export function ChatContent({
 									</Box>
 								)
 							}
+              if(chats[virtualRow.index].role === 'gpt4limit') {
+                return <Box ref={virtualizer.measureElement} key={virtualRow.key} >
+                <Box color="#303030" display="flex" justifyContent="center" alignItems="center" p={2}>
+                    您的GPT4使用次数已耗尽，请邀请好友注册或充值获得更多次数
+                </Box>
+                 <Box display="flex" justifyContent="center" alignItems="center">
+                  <Typography variant="button" onClick={onShare} style={{margin: '0 6px', fontSize: '16px', cursor: 'pointer', color: '#1976d2'}}>复制邀请链接</Typography>  <Typography variant="button" onClick={()=> onRecharge()} style={{margin: '0 6px', fontSize: '16px', cursor: 'pointer', color: '#1976d2'}}>充值</Typography>
+                 </Box>
+                </Box>
+              }
 							return (
 								<Box
 									data-index={virtualRow.index}

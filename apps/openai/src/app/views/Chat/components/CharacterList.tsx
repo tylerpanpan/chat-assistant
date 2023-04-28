@@ -1,4 +1,4 @@
-import { Avatar, Box, Button, Stack, IconButton } from "@mui/material";
+import { Avatar, Box, Button, Stack, IconButton, Badge, Chip } from "@mui/material";
 import BorderColorIcon from '@mui/icons-material/BorderColor';
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddCircleOutlineSharpIcon from '@mui/icons-material/AddCircleOutlineSharp';
@@ -48,10 +48,10 @@ export function CharacterList({
           >
             <Stack direction="row" alignItems="center" justifyContent="space-between">
               <Stack direction="row" alignItems="center">
-                <Box width="30px" height="30px" borderRadius="50%">
-                  <Avatar sx={{ width: 30, height: 30 }} src={bot.avatar} />
-                </Box>
-                <Box ml={1}>{bot.name}</Box>
+                  <Box width="30px" height="30px" borderRadius="50%">
+                    <Avatar sx={{ width: 30, height: 30 }} src={bot.avatar} />
+                  </Box>
+                <Box ml={1}>{bot.name} {bot.model === 'gpt-4' && <Chip sx={{fontSize: '12px',height: '18px'}} size="small" label="GPT-4" color="primary"></Chip>}</Box>
               </Stack>
               <Stack direction="row" alignItems="center" spacing={.8}>
                 {!bot.isDefault && bot.id === characterId && <IconButton onClick={handleEditCharacter(bot.id)}>

@@ -4,10 +4,11 @@ import { CharacterModule } from "../character/character.module";
 import { ChatController } from "./chat.controller";
 import { ChatService } from "./chat.service";
 import { Chat } from "./entities/chat.entity";
+import { ModelUsage } from "./entities/model-usage.entity";
 
 @Module({
   imports: [
-    MikroOrmModule.forFeature([Chat]),
+    MikroOrmModule.forFeature([Chat, ModelUsage]),
     CharacterModule
   ],
   controllers: [ChatController],

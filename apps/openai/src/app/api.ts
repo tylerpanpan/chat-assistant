@@ -105,7 +105,7 @@ export class UserAPI extends BaseAPI {
   }
 
   userinfo() {
-    return this.get<{ username: string, email: string, tokens: number, balance: number, type: string, id: number }>('/api/user/my')
+    return this.get<{ username: string, email: string, tokens: number, balance: number, type: string, id: number, gpt4Limit: number }>('/api/user/my')
   }
 
   ipLogin() {
