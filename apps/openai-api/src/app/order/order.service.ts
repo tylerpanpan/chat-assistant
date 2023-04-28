@@ -76,6 +76,7 @@ export class OrderService {
     const userRepo =  this.em.getRepository(User);
     const user = await userRepo.findOne({id: order.user.id})
     user.balance = +user.balance + order.amount;
+    user.gpt4Limit += Math.round(order.amount / this.configService.get('system.rechargeRewardGpt4LimitPerAmount'));
   
     await userRepo.flush();
   }
