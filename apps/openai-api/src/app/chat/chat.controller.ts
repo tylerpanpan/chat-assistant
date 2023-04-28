@@ -84,7 +84,7 @@ export class ChatController {
       res.append('X-Accel-Buffering', 'no')
     }
     const response = await this.chatService.chat(chatId, user, text, stream, (msg) => {
-      res.write(`data: ${JSON.stringify(msg)}\n\n`)
+      res.write(`data: ${msg}\n\n`)
     })
     if (stream) {
       //write end
