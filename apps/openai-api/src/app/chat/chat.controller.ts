@@ -5,6 +5,7 @@ import { ChatService } from "./chat.service";
 import { RolesGuard } from "../guards/roles.guard";
 import { Response } from "express";
 import { CreateChatDto } from "./dto/create.dto";
+import { Throttle } from "@nestjs/throttler";
 
 @UseGuards(AuthGuard('jwt'), RolesGuard)
 @Controller('chat')
@@ -67,6 +68,7 @@ export class ChatController {
   }
 
   @Post(':id')
+  @Throttle(5, 1)
   async chat(
     @Param('id') chatId: number,
     @Body('text') text: string,

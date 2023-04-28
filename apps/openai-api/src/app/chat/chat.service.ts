@@ -13,6 +13,8 @@ import { ConversationChain } from 'langchain/chains'
 import { ChatPromptTemplate, HumanMessagePromptTemplate, MessagesPlaceholder, SystemMessagePromptTemplate } from "langchain/prompts";
 import { CallbackManager } from "langchain/callbacks";
 import { GPTModel } from "libs/openai-lib/src/enums/GPTModel";
+import { ModelUsage } from "./entities/model-usage.entity";
+import moment from "moment";
 
 
 @Injectable()
@@ -24,6 +26,8 @@ export class ChatService {
   constructor(
     @InjectRepository(Chat)
     private chatRepo: EntityRepository<Chat>,
+    @InjectRepository(ModelUsage)
+    private modelUsageRepo: EntityRepository<ModelUsage>,
     private em: EntityManager,
     private configService: ConfigService
   ) {
@@ -81,9 +85,26 @@ export class ChatService {
     return chat
   }
 
+  async recordModelUsage(model: GPTModel, tokens: number, messages: number) {
+    const month = moment().format('YYYY-MM')
+    const usage = await this.modelUsageRepo.findOne({ model, month })
+    if (usage) {
+      usage.tokens += tokens
+      usage.messages += messages
+    } else {
+      const usage = new ModelUsage()
+      usage.model = model
+      usage.tokens = tokens
+      usage.messages = messages
+      usage.month = month
+      await this.modelUsageRepo.persistAndFlush(usage)
+    }
+  }
+
   async chat(chatId: number, user: User, text: string, stream: boolean = false, handleNewToken?: (msg: string) => void) {
     const userRepo = this.em.getRepository(User);
     const u = await userRepo.findOne({ id: user.id })
+
 
     if (u.type === Role.Guest && user.messageCount >= (+this.configService.get('system.guestMessageLimit') || 10)) {
       throw new HttpException('You have reached the limit of messages', 403)
@@ -99,8 +120,16 @@ export class ChatService {
       throw new BadRequestException()
     }
 
-    // const contexts = this.openaiLib.buildContext(chat.messages, chat.character.definition, 2048)
-    // const messages = this.openaiLib.buildMessages(text, chat.character.definition, contexts.filter(ctx => !ctx.isDeleted))
+    if(chat.character.model === GPTModel.GPT4 && user.gpt4Limit <= 0) {
+      throw new HttpException('You have reached the limit of messages', 419)
+    }
+
+    const modelUsage  = await this.modelUsageRepo.findOne({ model: chat.character.model, month: moment().format('YYYY-MM') })
+    if(modelUsage && chat.character.model === GPTModel.GPT4) {
+      if(modelUsage.messages >= (+this.configService.get('system.gpt4MonthlyMessageLimit') || 9000)) {
+        throw new HttpException('Model has reached the limit of messages', 500)
+      }
+    }
 
 
     const chatPrompt = ChatPromptTemplate.fromPromptMessages([
@@ -140,6 +169,9 @@ export class ChatService {
         },
         handleLLMNewToken: async (token) => {
           handleNewToken(token)
+        },
+        handleLLMError: async (error) => {
+          console.log(error)
         }
       })
     }, { 
@@ -164,10 +196,19 @@ export class ChatService {
 
     if (u.type !== Role.Guest) {
       const pricePerThousandTokens = +this.configService.get('system.pricePerThousandTokens') || 0.07
+      const gpt4PricePerThousandTokens = +this.configService.get('system.gpt4PricePerThousandTokens') || 0.756
       u.tokens += totalTokens || 0
-      u.balance -= (totalTokens || 0) / 1000 * pricePerThousandTokens
+      if(chat.character.model === GPTModel.GPT4) {
+        u.gpt4Limit -= 1
+        u.balance -= (totalTokens || 0) / 1000 * gpt4PricePerThousandTokens
+      }else{
+        u.balance -= (totalTokens || 0) / 1000 * pricePerThousandTokens
+      }
     }
     u.messageCount += 1
+
+    //record the model usage
+    await this.recordModelUsage(chat.character.model, totalTokens || 0, 1)
 
     await userRepo.flush()
     return response;
