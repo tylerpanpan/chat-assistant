@@ -35,7 +35,10 @@ export class ChatService {
   }
 
   async getOne(chatId: number, user: User) {
-    return this.chatRepo.findOne({ id: chatId, user }, { populate: ['character'] })
+    const chat = await this.chatRepo.findOne({ id: chatId, user }, { populate: ['character'] })
+    chat.updatedAt = new Date();
+    this.chatRepo.flush();
+    return chat;
   }
 
   async getAll(user: User, characterId: number) {
