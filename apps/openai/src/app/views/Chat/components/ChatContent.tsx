@@ -12,6 +12,7 @@ import "highlight.js/styles/atom-one-dark.css";
 
 interface ChatContentProps {
   chats: any[];
+  userInfo: any;
 	onRecharge: () => void;
 }
 
@@ -36,6 +37,7 @@ mdi.use(mdKatex, { blockClass: 'katexmath-block rounded-md p-[10px]', errorColor
 
 export function ChatContent({
 	chats,
+  userInfo,
 	onRecharge
 }: ChatContentProps) {
 	const { showToast } = useFeedback();
@@ -69,7 +71,7 @@ export function ChatContent({
 	function copyToClipboard(text: string) {
     const dummy = document.createElement("textarea");
     document.body.appendChild(dummy);
-    dummy.value = text + `\nAI个人助理：https://grzl.ai`;
+    dummy.value = text + `\nAI个人助理：https://grzl.ai/${userInfo?.username ? '?invite=' + userInfo?.id : ''}`;
     dummy.select();
     document.execCommand("copy");
     document.body.removeChild(dummy);

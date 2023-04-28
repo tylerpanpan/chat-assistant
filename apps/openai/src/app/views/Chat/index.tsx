@@ -174,6 +174,7 @@ export function Chat() {
     setCharacterId(id);
     setChats([]);
     setPresetQuestions([]);
+    setShowChatList(false);
   };
 
   const handleEditCharacter = (id: number) => () => {
@@ -586,7 +587,7 @@ export function Chat() {
                         </IconButton>
                       </Tooltip>
                     )}
-                    {token && chat && (
+                    {token && chat && userInfo?.username && (
                       <Tooltip title="更多操作">
                         <IconButton sx={{ border: '1px solid #dedede', marginLeft: '10px' }} onClick={handleClickMore}>
                           <MoreHorizOutlinedIcon />
@@ -627,7 +628,7 @@ export function Chat() {
               {/* 所有会话消息 */}
               {showChatList && <ChatList allChats={allChats} onChoose={handleChooseChat} onDelete={handleDeleteChat} />}
               {/* 当前会话内容 */}
-              {!showChatList && <ChatContent chats={chats} onRecharge={() => setRechargeModalOpen(true)} />}
+              {!showChatList && <ChatContent chats={chats} userInfo={userInfo} onRecharge={() => setRechargeModalOpen(true)} />}
 
               {!showChatList && <Box mx={2} my={1.5} position="relative">
                 {presetQuestions.length > 0 && !showChatList && <Box pt={1} borderTop="1px solid #dedede">
