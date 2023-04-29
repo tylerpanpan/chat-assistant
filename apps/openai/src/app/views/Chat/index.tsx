@@ -283,8 +283,9 @@ export function Chat() {
             return;
           }
           // 处理接收到的文本数据
-          const _value = value.replace(/data: "(.*)"/g, '$1').replace(/\n/g, '').replace(/\\n/g, '\n').replace(/\"/g, '"').replace(/\\/g, '')
-          streamText += _value
+          const _value = value.replace(/data: "(.*)"\n\n/g, '$1')
+          console.info(_value)
+          streamText += JSON.parse(`"${_value}"`)
 
           setChats([
             ...chats,
