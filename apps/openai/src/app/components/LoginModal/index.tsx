@@ -21,6 +21,7 @@ import { useFeedback } from "../Feedback";
 import useAPI from "../../hooks/useAPI";
 import CloseIcon from "@mui/icons-material/Close";
 import { useEffect, useState } from "react";
+import { getUrlParams } from "../../utils"
 
 interface LoginModalProps extends DialogProps {
   register?: number;
@@ -83,14 +84,6 @@ export function LoginModal({ ...props }: LoginModalProps) {
       const api = isRegister ? handleRegister(values) : handleLogin(values);
     },
   });
-
-  const getUrlParams = (url: string) => {
-    const u = new URL(url);
-    const s = new URLSearchParams(u.search);
-    const obj: any = {};
-    s.forEach((v, k) => (obj[k] = v));
-    return obj;
-  }
 
   useEffect(() => {
     const urlQuery = getUrlParams(location.href)

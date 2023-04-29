@@ -6,15 +6,21 @@ import {
   CircularProgress,
   Button,
   Typography,
-  Skeleton,
   Drawer,
   Tooltip,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
 } from "@mui/material";
-import { Box, Stack, useTheme } from "@mui/system";
+import { Box, Stack } from "@mui/system";
 import SendIcon from "@mui/icons-material/Send";
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import ViewHeadlineOutlinedIcon from '@mui/icons-material/ViewHeadlineOutlined';
+import SaveAsOutlinedIcon from '@mui/icons-material/SaveAsOutlined';
 import ShareOutlinedIcon from '@mui/icons-material/ShareOutlined';
-import { useEffect, useCallback, useMemo, useRef, useState } from "react";
+import MoreHorizOutlinedIcon from '@mui/icons-material/MoreHorizOutlined';
+import { useEffect, useCallback, useState } from "react";
 import { useQuery } from "react-query";
 import { useAuth } from "../../provider/AuthProvider";
 import { CreateCharacterModal } from "../../components/CreateCharacterModal";
@@ -25,58 +31,40 @@ import MenuIcon from "@mui/icons-material/Menu";
 import MenuOpenIcon from "@mui/icons-material/MenuOpen";
 import LogoutSharpIcon from '@mui/icons-material/LogoutSharp';
 import { RechargeModal } from "../../components/RechargeModal";
+import { ChatContent } from "./components/ChatContent";
+import { ChatList } from "./components/ChatList";
 import localForage from "localforage";
-import { useVirtualizer } from '@tanstack/react-virtual'
-import MarkdownIt from "markdown-it";
-import mdKatex from "@traptitech/markdown-it-katex";
-import mila from "markdown-it-link-attributes";
-import hljs from "highlight.js";
-import "katex/dist/katex.css";
-import "highlight.js/styles/atom-one-dark.css";
+import { getUrlParams } from "../../utils"
 import './index.scss';
 
 const drawerWidth = 320;
 
-const getUrlParams = (url: string) => {
-  const u = new URL(url);
-  const s = new URLSearchParams(u.search);
-  const obj: any = {};
-  s.forEach((v, k) => (obj[k] = v));
-  return obj;
-}
-
-function highlightBlock(str: string, lang?: string) {
-  return `<pre class="code-block-wrapper"><code class="hljs code-block-body ${lang}">${str}</code></pre>`
-}
-
-const mdi = new MarkdownIt({
-  linkify: true,
-  highlight(code, language) {
-    const validLang = !!(language && hljs.getLanguage(language))
-    if (validLang) {
-      const lang = language ?? ''
-      return highlightBlock(hljs.highlight(code, { language: lang }).value, lang)
-    }
-    return highlightBlock(hljs.highlightAuto(code).value, '')
-  },
-})
-
-mdi.use(mila, { attrs: { target: '_blank', rel: 'noopener' } })
-mdi.use(mdKatex, { blockClass: 'katexmath-block rounded-md p-[10px]', errorColor: ' #cc0000' })
-
 export function Chat() {
-  const { characterApi, chatApi, userApi, orderApi } = useAPI();
+  const { characterApi, chatApi, userApi } = useAPI();
+  const { token, showLogin, login, logout } = useAuth();
+  const { showDialog, showToast } = useFeedback();
   const [characterId, setCharacterId] = useState<null | number>();
   const [curCharacter, setCurCharacter] = useState<any>();
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
-  const { token, showLogin, login, logout } = useAuth();
-  const { showDialog, showToast } = useFeedback();
-  const chatEndRef = useRef<HTMLDivElement>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [rechargeModalOpen, setRechargeModalOpen] = useState(false);
   const [presetQuestions, setPresetQuestions] = useState<any[]>([]);
+  const [chat, setChat] = useState<any>()
+  const [showChatList, setShowChatList] = useState(false);
 
+  // 更多操作
+  const [allChats, setAllChats] = useState<any[]>([])
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const openMore = Boolean(anchorEl);
+  const handleClickMore = (event: React.MouseEvent<HTMLButtonElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+  const handleCloseMore = () => {
+    setAnchorEl(null);
+  };
+
+  // 判断是否是游客，新用户
   useEffect(() => {
     const urlQuery = getUrlParams(location.href)
     if (urlQuery.invite) {
@@ -110,13 +98,14 @@ export function Chat() {
     }
   );
 
-  const { data: chat } = useQuery(
+  useQuery(
     ["chat/last", token, characterId],
     () => chatApi.lastChat(characterId),
     { 
       enabled: !!token && !!characterId,
       refetchOnWindowFocus: false,
       onSuccess(data) {
+        setChat(data)
         localForage.getItem('character-chat').then((mapData: any) => {
           const characterChatMap = mapData || {}
           characterChatMap[`${characterId}`] = data.id
@@ -137,7 +126,7 @@ export function Chat() {
     }
   );
 
-  const { data, refetch: refetchChat } = useQuery(
+  const { refetch: refetchChat } = useQuery(
     ["chats", chat],
     () => chatApi.getChats(chat?.id),
     {
@@ -185,6 +174,7 @@ export function Chat() {
     setCharacterId(id);
     setChats([]);
     setPresetQuestions([]);
+    setShowChatList(false);
   };
 
   const handleEditCharacter = (id: number) => () => {
@@ -347,10 +337,11 @@ export function Chat() {
   };
 
   const handleShare = () => {
-    copyToClipboard('https://grzl.ai/', true)
+    copyToClipboard('https://grzl.ai/')
   }
 
   const handleClearMessage = () => {
+    handleCloseMore()
     if (!token) {
       showLogin();
       return;
@@ -368,26 +359,91 @@ export function Chat() {
     });
   };
 
-  function copyToClipboard(text: string, isShare = false) {
+  const handleCreateChat = () => {
+    handleCloseMore()
+    if (!token) {
+      showLogin();
+      return;
+    }
+    if (!characterId) return;
+    chatApi
+      .createChat(characterId)
+      .then((res) => {
+        showToast('新会话创建成功');
+        setChats([])
+        setChat(res)
+        localForage.getItem('character-chat').then((mapData: any) => {
+          const characterChatMap = mapData || {}
+          characterChatMap[`${characterId}`] = res.id
+          localForage.setItem('character-chat', characterChatMap)
+        })
+      })
+      .catch((err) => {});
+  }
+
+  const handleAllChat = () => {
+    handleCloseMore()
+    if (!token) {
+      showLogin();
+      return;
+    }
+    if (!characterId) return;
+    chatApi
+      .getCharacterChat(characterId)
+      .then((res) => {
+        if (res.length > 0) {
+          setAllChats(res)
+          setShowChatList(true);
+        } else {
+          setChats([])
+          setShowChatList(false);
+          handleCreateChat()
+        }
+      })
+      .catch((err) => {});
+  }
+
+  const handleDeleteChat = (id: number) => {
+    showDialog("确定要删除此会话吗?", "删除会话", "取消", "确定", (confirm) => {
+      if (confirm == 1) {
+        chatApi
+          .delChat(id)
+          .then((res) => {
+            showToast('删除成功');
+            handleAllChat();
+            localForage.getItem('character-chat').then((mapData: any) => {
+              const characterChatMap = mapData || {}
+              characterChatMap[`${characterId}`] = chat?.id === id ? null : chat?.id
+              localForage.setItem('character-chat', characterChatMap)
+            })
+          })
+          .catch((err) => {});
+      }
+    });
+  }
+
+  const handleChooseChat = (chatData: any) => {
+    setShowChatList(false);
+    if (chat?.id !== chatData.id) {
+      setChats([])
+      setChat(chatData)
+    }
+    localForage.getItem('character-chat').then((mapData: any) => {
+      const characterChatMap = mapData || {}
+      characterChatMap[`${characterId}`] = chatData.id
+      localForage.setItem('character-chat', characterChatMap)
+    })
+  }
+
+  function copyToClipboard(text: string) {
     const dummy = document.createElement("textarea");
     document.body.appendChild(dummy);
-    if (isShare) {
-      dummy.value = text + `?invite=${userInfo?.id}`;
-    } else {
-      dummy.value = text + `\nAI个人助理：https://grzl.ai`;
-    }
+    dummy.value = text + `?invite=${userInfo?.id}`;
     dummy.select();
     document.execCommand("copy");
     document.body.removeChild(dummy);
-    showToast(isShare ? "分享链接已拷贝到剪贴板" : "已拷贝到剪贴板");
+    showToast("分享链接已拷贝到剪贴板");
   }
-
-  const copyText = (data: any) => {
-    if (data.role === "assistant") {
-      data.content && copyToClipboard(data.content);
-    }
-  };
-
 
   const handleLogout = () => {
     if (!token) {
@@ -460,23 +516,6 @@ export function Chat() {
       </Stack>
     </Box>
   ), [token, userInfo, characterId, characters]);
-
-  // 虚拟滚动相关
-  const count = chats.length
-  const virtualizer = useVirtualizer({
-    count,
-    getScrollElement: () => chatEndRef.current,
-    estimateSize: () => 100,
-    overscan: 10
-  })
-  const items = virtualizer.getVirtualItems()
-
-  useEffect(() => {
-    if (chatEndRef.current && chats.length) {
-      // virtualizer.scrollToIndex(chats.length - 1)
-      chatEndRef.current.scrollTop = chatEndRef.current.scrollHeight + 300;
-    }
-  }, [chats, chatEndRef]);
 
   return (
     <>
@@ -562,100 +601,58 @@ export function Chat() {
                     </Stack>
                   </Box>
                   <Box height="42px" flexShrink={0}>
-                    {token && chat && (
-                      <Tooltip title="清空信息">
-                        <IconButton sx={{ border: '1px solid #dedede' }} onClick={handleClearMessage}>
-                          <DeleteOutlineIcon />
-                        </IconButton>
-                      </Tooltip>
-                    )}
                     {token && userInfo?.username && (
                       <Tooltip title="分享得积分">
-                        <IconButton sx={{ border: '1px solid #dedede', marginLeft: '10px' }} onClick={handleShare}>
+                        <IconButton sx={{ border: '1px solid #dedede' }} onClick={handleShare}>
                           <ShareOutlinedIcon />
                         </IconButton>
                       </Tooltip>
                     )}
+                    {token && chat && userInfo?.username && (
+                      <Tooltip title="更多操作">
+                        <IconButton sx={{ border: '1px solid #dedede', marginLeft: '10px' }} onClick={handleClickMore}>
+                          <MoreHorizOutlinedIcon />
+                        </IconButton>
+                      </Tooltip>
+                    )}
+                    <Menu
+                      id="basic-menu"
+                      anchorEl={anchorEl}
+                      open={openMore}
+                      onClose={handleCloseMore}
+                      MenuListProps={{
+                        'aria-labelledby': 'basic-button',
+                      }}
+                    >
+                      {!showChatList && <MenuItem onClick={handleClearMessage}>
+                        <ListItemIcon>
+                          <DeleteOutlineIcon fontSize="small" />
+                        </ListItemIcon>
+                        <ListItemText>清空会话</ListItemText>
+                      </MenuItem>}
+                      {!showChatList && <MenuItem onClick={handleCreateChat}>
+                        <ListItemIcon>
+                          <SaveAsOutlinedIcon fontSize="small" />
+                        </ListItemIcon>
+                        <ListItemText>保存并新建会话</ListItemText>
+                      </MenuItem>}
+                      <MenuItem onClick={handleAllChat}>
+                        <ListItemIcon>
+                          <ViewHeadlineOutlinedIcon fontSize="small" />
+                        </ListItemIcon>
+                        <ListItemText>查看所有会话</ListItemText>
+                      </MenuItem>
+                    </Menu>
                   </Box>
                 </Stack>
               </Box>
-              <Box ref={chatEndRef} p={2} height="100%" overflow={"scroll"}>
-                <Box height={virtualizer.getTotalSize()}>
-                  <Stack direction="column" sx={{transform: `translateY(${items[0] ? items[0].start : 0}px)`}}>
-                    {items.map((virtualRow) => {
-                      if(chats[virtualRow.index].role === 'recharge'){
-                        return (
-                          <Box ref={virtualizer.measureElement} key={virtualRow.key} color="#303030" display="flex" justifyContent="center" alignItems="center" p={2}>
-                            余额不足，请前往<Typography variant="button" onClick={()=> setRechargeModalOpen(true)} style={{margin: '0 6px', fontSize: '16px', cursor: 'pointer', color: '#1976d2'}}>充值</Typography>
-                          </Box>
-                        )
-                      }
-                      if(chats[virtualRow.index].role === 'guest'){
-                        return (
-                          <Box ref={virtualizer.measureElement} key={virtualRow.key} color="#303030" display="flex" justifyContent="center" alignItems="center" p={2}>
-                            您已达到10次使用限制，请 <Typography variant="button" onClick={()=> showLogin()} style={{margin: '0 6px', fontSize: '16px', cursor: 'pointer', color: '#1976d2'}}>登录</Typography> 或 <Typography variant="button" onClick={()=> showLogin(true)} style={{margin: '0 6px', fontSize: '16px', cursor: 'pointer', color: '#1976d2'}}>注册</Typography>
-                          </Box>
-                        )
-                      }
-                      if(chats[virtualRow.index].role === 'gpt4limit') {
-                        return <Box ref={virtualizer.measureElement} key={virtualRow.key} >
-                        <Box color="#303030" display="flex" justifyContent="center" alignItems="center" p={2}>
-                            您的GPT4使用次数已耗尽，请邀请好友注册或充值获得更多次数
-                        </Box>
-                         <Box display="flex" justifyContent="center" alignItems="center">
-                          <Typography variant="button" onClick={handleShare} style={{margin: '0 6px', fontSize: '16px', cursor: 'pointer', color: '#1976d2'}}>复制邀请链接</Typography>  <Typography variant="button" onClick={()=> setRechargeModalOpen(true)} style={{margin: '0 6px', fontSize: '16px', cursor: 'pointer', color: '#1976d2'}}>充值</Typography>
-                         </Box>
-                        </Box>
-                      }
-                      return (
-                        <Box
-                          data-index={virtualRow.index}
-                          ref={virtualizer.measureElement}
-                          key={virtualRow.key}
-                          display={'flex'}
-                          py={2.5}
-                          ml={chats[virtualRow.index].role === "user" ? "auto" : 0}
-                          mr={chats[virtualRow.index].role === "user" ? 0 : "15%"}
-                        >
-                          <Box
-                            className="chat-wrap"
-                            width={'100%'}
-                            bgcolor={chats[virtualRow.index].role === "user" ? "#e7f8ff" : "rgba(0, 0, 0, .05)"}
-                            border="1px solid #dedede"
-                            borderRadius="10px"
-                            color="#24292f"
-                            px={2}
-                            py={1}
-                            letterSpacing={"1.2px"}
-                            position={'relative'}
-                          >
-                            {chats[virtualRow.index].role === "assistant" && (
-                              <Box
-                                className="chat-actions"
-                              >
-                                <Typography variant="caption" className="action-btn" onClick={() => copyText(chats[virtualRow.index])}>复制</Typography>
-                                {/* <Typography variant="caption" className="action-btn">删除</Typography> */}
-                              </Box>
-                            )}
-                            {chats[virtualRow.index].loading ? (
-                              <Skeleton
-                                sx={{
-                                  width: "210px",
-                                  bgcolor: "grey.400",
-                                }}
-                              ></Skeleton>
-                            ) : (
-                              <Box className="chat-box" dangerouslySetInnerHTML={{__html: mdi.render(chats[virtualRow.index].content)}}></Box>
-                            )}
-                          </Box>
-                        </Box>
-                      )})
-                    }
-                  </Stack>
-                </Box>
-              </Box>
-              <Box mx={2} my={1.5} position="relative">
-                {presetQuestions.length > 0 && <Box pt={1} borderTop="1px solid #dedede">
+              {/* 所有会话消息 */}
+              {showChatList && <ChatList allChats={allChats} onChoose={handleChooseChat} onDelete={handleDeleteChat} />}
+              {/* 当前会话内容 */}
+              {!showChatList && <ChatContent chats={chats} userInfo={userInfo} onRecharge={() => setRechargeModalOpen(true)} onShare={handleShare} />}
+
+              {!showChatList && <Box mx={2} my={1.5} position="relative">
+                {presetQuestions.length > 0 && !showChatList && <Box pt={1} borderTop="1px solid #dedede">
                   <Stack direction="row" sx={{overflowY: 'auto', flexFlow: 'wrap'}}>
                     {
                       presetQuestions.map((question, index) => (
@@ -700,7 +697,7 @@ export function Chat() {
                     >发送</Button>
                   </Box>
                 </Stack>
-              </Box>
+              </Box>}
             </Stack>
           </Box>
         </Stack>
