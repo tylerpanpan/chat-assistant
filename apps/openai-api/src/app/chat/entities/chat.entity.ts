@@ -23,4 +23,7 @@ export class Chat {
 
   @Property({ type: 'datetime', onCreate: () => new Date(), nullable: true })
   createdAt: Date;
+
+  @Property({ type: 'datetime', onUpdate: () => new Date(), nullable: true })
+  updatedAt: Date;
 }

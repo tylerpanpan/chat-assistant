@@ -35,7 +35,10 @@ export class ChatService {
   }
 
   async getOne(chatId: number, user: User) {
-    return this.chatRepo.findOne({ id: chatId, user }, { populate: ['character'] })
+    const chat = await this.chatRepo.findOne({ id: chatId, user }, { populate: ['character'] })
+    chat.updatedAt = new Date();
+    this.chatRepo.flush();
+    return chat;
   }
 
   async getAll(user: User, characterId: number) {
@@ -75,7 +78,7 @@ export class ChatService {
   async getUserLastChat(user: User, characterId: number) {
     const character = await this.em.getRepository(Character).findOne({ id: characterId });
 
-    let chat = await this.chatRepo.findOne({ user, character: characterId }, { populate: ['character'], orderBy: { id: 'desc' } })
+    let chat = await this.chatRepo.findOne({ user, character: characterId }, { populate: ['character'], orderBy: { 'updatedAt': 'desc',id: 'desc' } })
     if (!chat) {
       chat = new Chat()
       chat.user = user
