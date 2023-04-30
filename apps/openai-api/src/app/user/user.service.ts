@@ -40,7 +40,9 @@ export class UserService {
 
     if (referUser) {
       const inviteRewardTokens = await this.sysConfigService.getConfigByKey('system.inviteRewardTokens')
+      const inviteRewardGpt4Limit = await this.sysConfigService.getConfigByKey('system.inviteRewardGpt4Limit')
       referUser.balance = +referUser.balance + (+inviteRewardTokens || 0);
+      referUser.gpt4Limit = +referUser.gpt4Limit + (+inviteRewardGpt4Limit || 0);
       await this.userRepo.flush();
     }
 
@@ -78,12 +80,15 @@ export class UserService {
     user.password = this.createPassword(username, password)
     user.ip = null
     user.referUser = referUser
+
     console.info(userDefaultTokens,user.balance)
     await this.userRepo.flush()
 
     if (referUser) {
       const inviteRewardTokens = await this.sysConfigService.getConfigByKey('system.inviteRewardTokens')
+      const inviteRewardGpt4Limit = await this.sysConfigService.getConfigByKey('system.inviteRewardGpt4Limit')
       referUser.balance = +referUser.balance + (+inviteRewardTokens || 0);
+      referUser.gpt4Limit = +referUser.gpt4Limit + (+inviteRewardGpt4Limit || 0);
       console.info(inviteRewardTokens,referUser.balance)
       await this.userRepo.flush();
     }
@@ -106,7 +111,7 @@ export class UserService {
   }
 
   findOne(id: number) {
-    return this.userRepo.findOne({ id }, { fields: ['email', 'id', 'tokens', 'username', 'balance', 'type', 'enable'] });
+    return this.userRepo.findOne({ id }, { fields: ['email', 'id', 'tokens', 'username', 'balance', 'type', 'enable', 'gpt4Limit'] });
   }
 
   findOneBy(where: FilterQuery<User>) {

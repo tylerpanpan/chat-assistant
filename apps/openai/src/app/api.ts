@@ -105,7 +105,7 @@ export class UserAPI extends BaseAPI {
   }
 
   userinfo() {
-    return this.get<{ username: string, email: string, tokens: number, balance: number, type: string, id: number }>('/api/user/my')
+    return this.get<{ username: string, email: string, tokens: number, balance: number, type: string, id: number, gpt4Limit: number }>('/api/user/my')
   }
 
   ipLogin() {
@@ -154,7 +154,18 @@ export class ChatAPI extends BaseAPI {
       method: 'POST',
       body: JSON.stringify({ text, stream })
     })
-    // return this.post<any>(`/api/chat/${id}`, { text, stream })
+  }
+
+  getCharacterChat(characterId: any) {
+    return this.get<any>('/api/chat', { characterId })
+  }
+
+  createChat(characterId: any) {
+    return this.post<any>('/api/chat', { characterId })
+  }
+
+  delChat(id: number) {
+    return this.delete<any>(`/api/chat/${id}`, {})
   }
 
   clearMessage(id: string) {

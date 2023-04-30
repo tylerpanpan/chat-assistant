@@ -14,6 +14,8 @@ import { ChatPromptTemplate, HumanMessagePromptTemplate, MessagesPlaceholder, Sy
 import { CallbackManager } from "langchain/callbacks";
 import { GPTModel } from "libs/openai-lib/src/enums/GPTModel";
 import { SysConfigService } from "../config/sysConfig.service";
+import { ModelUsage } from "./entities/model-usage.entity";
+import moment from "moment";
 
 
 @Injectable()
@@ -25,6 +27,8 @@ export class ChatService {
   constructor(
     @InjectRepository(Chat)
     private chatRepo: EntityRepository<Chat>,
+    @InjectRepository(ModelUsage)
+    private modelUsageRepo: EntityRepository<ModelUsage>,
     private em: EntityManager,
     private configService: ConfigService,
     private sysConfigService: SysConfigService,
@@ -33,7 +37,10 @@ export class ChatService {
   }
 
   async getOne(chatId: number, user: User) {
-    return this.chatRepo.findOne({ id: chatId, user }, { populate: ['character'] })
+    const chat = await this.chatRepo.findOne({ id: chatId, user }, { populate: ['character'] })
+    chat.updatedAt = new Date();
+    this.chatRepo.flush();
+    return chat;
   }
 
   async getAll(user: User, characterId: number) {
@@ -73,7 +80,7 @@ export class ChatService {
   async getUserLastChat(user: User, characterId: number) {
     const character = await this.em.getRepository(Character).findOne({ id: characterId });
 
-    let chat = await this.chatRepo.findOne({ user, character: characterId }, { populate: ['character'], orderBy: { id: 'desc' } })
+    let chat = await this.chatRepo.findOne({ user, character: characterId }, { populate: ['character'], orderBy: { 'updatedAt': 'desc',id: 'desc' } })
     if (!chat) {
       chat = new Chat()
       chat.user = user
@@ -83,12 +90,29 @@ export class ChatService {
     return chat
   }
 
+  async recordModelUsage(model: GPTModel, tokens: number, messages: number) {
+    const month = moment().format('YYYY-MM')
+    const usage = await this.modelUsageRepo.findOne({ model, month })
+    if (usage) {
+      usage.tokens += tokens
+      usage.messages += messages
+    } else {
+      const usage = new ModelUsage()
+      usage.model = model
+      usage.tokens = tokens
+      usage.messages = messages
+      usage.month = month
+      await this.modelUsageRepo.persistAndFlush(usage)
+    }
+  }
+
   async chat(chatId: number, user: User, text: string, stream: boolean = false, handleNewToken?: (msg: string) => void) {
     const userRepo = this.em.getRepository(User);
     const u = await userRepo.findOne({ id: user.id })
 
     const guestMessageLimit = await this.sysConfigService.getConfigByKey('system.guestMessageLimit')
-
+    
+    const time = moment().format('YYYY-MM-DD HH:mm')
     if (u.type === Role.Guest && user.messageCount >= (+guestMessageLimit || 10)) {
       throw new HttpException('You have reached the limit of messages', 403)
     }
@@ -103,8 +127,17 @@ export class ChatService {
       throw new BadRequestException()
     }
 
-    // const contexts = this.openaiLib.buildContext(chat.messages, chat.character.definition, 2048)
-    // const messages = this.openaiLib.buildMessages(text, chat.character.definition, contexts.filter(ctx => !ctx.isDeleted))
+    if(chat.character.model === GPTModel.GPT4 && user.gpt4Limit <= 0) {
+      throw new HttpException('You have reached the limit of messages', 419)
+    }
+
+    const modelUsage  = await this.modelUsageRepo.findOne({ model: chat.character.model, month: moment().format('YYYY-MM') })
+    if(modelUsage && chat.character.model === GPTModel.GPT4) {
+      const gpt4MonthlyMessageLimit = await this.sysConfigService.getConfigByKey("system.gpt4MonthlyMessageLimit")
+      if(modelUsage.messages >= (+gpt4MonthlyMessageLimit || 9000)) {
+        throw new HttpException('Model has reached the limit of messages', 500)
+      }
+    }
 
 
     const chatPrompt = ChatPromptTemplate.fromPromptMessages([
@@ -144,6 +177,9 @@ export class ChatService {
         },
         handleLLMNewToken: async (token) => {
           handleNewToken(token)
+        },
+        handleLLMError: async (error) => {
+          console.log(error)
         }
       })
     }, { 
@@ -159,20 +195,30 @@ export class ChatService {
 
     const { response } = await chain.call({ input: text });
 
-    totalTokens = totalTokens || this.openaiLib.countMessageToken(this.openaiLib.buildMessages(text, chat.character.definition, filteredContext))
+    totalTokens = totalTokens || this.openaiLib.countMessageToken([...this.openaiLib.buildMessages(text, chat.character.definition, filteredContext), { role: 'assistant', content: response }])
 
-    const newMessages = [...contexts, { role: 'user', content: text }, { role: 'assistant', content: response }]
+    const newMessages = [...contexts, { role: 'user', content: text, time }, { role: 'assistant', content: response, time: moment().format('YYYY-MM-DD HH:mm') }]
     chat.messages = newMessages as any
     chat.totalTokens += totalTokens || 0
     await this.chatRepo.flush()
 
     if (u.type !== Role.Guest) {
       const defaultPricePerThousandTokens = await this.sysConfigService.getConfigByKey('system.pricePerThousandTokens')
+      const defaultGpt4PricePerThousandTokens = await this.sysConfigService.getConfigByKey('system.gpt4PricePerThousandTokens')
       const pricePerThousandTokens = +defaultPricePerThousandTokens || 0.07
+      const gpt4PricePerThousandTokens = +defaultGpt4PricePerThousandTokens || 0.756
       u.tokens += totalTokens || 0
-      u.balance -= (totalTokens || 0) / 1000 * pricePerThousandTokens
+      if(chat.character.model === GPTModel.GPT4) {
+        u.gpt4Limit -= 1
+        u.balance -= (totalTokens || 0) / 1000 * gpt4PricePerThousandTokens
+      }else{
+        u.balance -= (totalTokens || 0) / 1000 * pricePerThousandTokens
+      }
     }
     u.messageCount += 1
+
+    //record the model usage
+    await this.recordModelUsage(chat.character.model, totalTokens || 0, 1)
 
     await userRepo.flush()
     return response;
