@@ -42,4 +42,10 @@ export class Character {
 
   @Property({ nullable: true, default: false })
   isGuestAccess: boolean;
+
+  @Property({ nullable: true, default: false })
+  recommendEnable: boolean;
+
+  @Property({ nullable: true, default: false })
+  recommendFocus: boolean;
 }
