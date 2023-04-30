@@ -198,7 +198,7 @@ export class ChatService {
       organization: this.configService.get('system.openAiOrgId')
     })
 
-    const {text: response} = await chatModel.call([ new SystemChatMessage(chat.character.definition),...messages])
+    const {text: response} = await chatModel.call([ new SystemChatMessage(chat.character.definition),...messages, new HumanChatMessage(text)])
 
     // const chain = new ConversationChain({
     //   memory,
