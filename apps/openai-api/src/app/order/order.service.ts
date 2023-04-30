@@ -7,6 +7,7 @@ import AlipaySdk from 'alipay-sdk';
 import moment from 'moment';
 import { readFileSync } from "fs";
 import { User } from "../user/entities/user.entity";
+import { SysConfigService } from "../config/sysConfig.service";
 
 @Injectable()
 export class OrderService {
@@ -15,7 +16,8 @@ export class OrderService {
     @InjectRepository(Order)
     private readonly orderRepo: EntityRepository<Order>,
     private readonly em: EntityManager,
-    private configService: ConfigService
+    private configService: ConfigService,
+    private sysConfigService: SysConfigService
   ) {
     this.alipaySdk = new AlipaySdk({
       appId: this.configService.get('alipay.appId'),
@@ -76,7 +78,8 @@ export class OrderService {
     const userRepo =  this.em.getRepository(User);
     const user = await userRepo.findOne({id: order.user.id})
     user.balance = +user.balance + order.amount;
-    user.gpt4Limit += Math.round(order.amount / this.configService.get('system.rechargeRewardGpt4LimitPerAmount'));
+    const rechargeRewardGpt4LimitPerAmount = await this.sysConfigService.getConfigByKey("system.rechargeRewardGpt4LimitPerAmount")
+    user.gpt4Limit += Math.round(order.amount / +rechargeRewardGpt4LimitPerAmount);
   
     await userRepo.flush();
   }
