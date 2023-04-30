@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, ParseBoolPipe, Post, Query, Req, Res, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, HttpException, Param, ParseBoolPipe, Post, Query, Req, Res, UseGuards } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { ChatService } from "./chat.service";
@@ -77,20 +77,25 @@ export class ChatController {
     @Body('stream') stream?: boolean,
 
   ) {
-    if (stream) {
-      res.append('Content-Type', 'text/event-stream')
-      res.append('Cache-Control', 'no-cache')
-      res.append('Connection', 'keep-alive')
-      res.append('X-Accel-Buffering', 'no')
-    }
-    const response = await this.chatService.chat(chatId, user, text, stream, (msg) => {
-      res.write(`data: ${JSON.stringify(msg)}\n\n`)
-    })
-    if (stream) {
-      //write end
-      res.end()
-    } else {
-      res.send(response) 
+    try {
+      if (stream) {
+        res.append('Content-Type', 'text/event-stream')
+        res.append('Cache-Control', 'no-cache')
+        res.append('Connection', 'keep-alive')
+        res.append('X-Accel-Buffering', 'no')
+      }
+      const response = await this.chatService.chat(chatId, user, text, stream, (msg) => {
+        res.write(`data: ${JSON.stringify(msg)}\n\n`)
+      })
+      if (stream) {
+        //write end
+        res.end()
+      } else {
+        res.send(response) 
+      }
+    } catch (err) {
+      res.setHeader('Content-Type', 'application/json')
+      throw new HttpException(err.message, err.status)
     }
   }
 }

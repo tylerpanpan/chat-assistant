@@ -149,10 +149,11 @@ export function Chat() {
   }
 
   useEffect(()=> {
-    if(curCharacter && curCharacter.recommendEnable) {
+    const character = characters?.find((item: any)=> item.id === characterId)
+    if(character && character.recommendEnable) {
       recommendQuestion(curCharacter.id)
     }
-  }, [curCharacter])
+  }, [characterId, characters])
 
   useEffect(() => {
     if (characters) {
@@ -244,6 +245,45 @@ export function Chat() {
       .chat(chat.id, question || text, true)
       .then((response: any) => {
         const reader = response.body.getReader();
+        if (response.status === 402) {
+          setChats([
+            ...chats,
+            {
+              'role': 'recharge',
+              'content': 'Tokens不足，请充值',
+            }
+          ])
+          setSending(false);
+          return;
+        } else if (response.status === 403) {
+          setChats([
+            ...chats,
+            {
+              'role': 'guest',
+              'content': '您已达到10次使用限制',
+            }
+          ])
+          setSending(false);
+          return;
+        } else if (response.status === 419) {
+          setChats([
+            ...chats,
+            {
+              'role': 'gpt4limit',
+              'content': '您的GPT-4使用次数已耗尽，请邀请好友注册或充值获得更多次数',
+            }
+          ])
+          setSending(false);
+          return;
+        } else if (response.status >= 300 ) {
+          setChats([
+            ...chats
+          ])
+          setSending(false);
+          showToast('现在业务繁忙，请稍后再试')
+          return;
+        }
+      
         const stream = new ReadableStream({
           start(controller) {
             function push() {
@@ -266,36 +306,7 @@ export function Chat() {
         textStream.read().then(function processText({ done, value }) {
           if (done) {
             console.log('Stream complete', streamText);
-            if (response.status === 402) {
-              setChats([
-                ...chats,
-                {
-                  'role': 'recharge',
-                  'content': 'Tokens不足，请充值',
-                }
-              ])
-            } else if (response.status === 403) {
-              setChats([
-                ...chats,
-                {
-                  'role': 'guest',
-                  'content': '您已达到10次使用限制',
-                }
-              ])
-            } else if (response.status === 419) {
-              setChats([
-                ...chats,
-                {
-                  'role': 'gpt4limit',
-                  'content': '您的GPT-4使用次数已耗尽，请邀请好友注册或充值获得更多次数',
-                }
-              ])
-            } else if (response.status >= 300 ) {
-              setChats([
-                ...chats
-              ])
-              showToast('现在业务繁忙，请稍后再试')
-            }
+           
             setSending(false);
             refetchUserInfo();
             return;
@@ -327,8 +338,35 @@ export function Chat() {
               'content': 'Tokens不足，请充值',
             }
           ])
-        } else {
-          showToast(e.message);
+        } if (e.response.status === 402) {
+          setChats([
+            ...chats,
+            {
+              'role': 'recharge',
+              'content': 'Tokens不足，请充值',
+            }
+          ])
+        } else if (e.response.status === 403) {
+          setChats([
+            ...chats,
+            {
+              'role': 'guest',
+              'content': '您已达到10次使用限制',
+            }
+          ])
+        } else if (e.response.status === 419) {
+          setChats([
+            ...chats,
+            {
+              'role': 'gpt4limit',
+              'content': '您的GPT-4使用次数已耗尽，请邀请好友注册或充值获得更多次数',
+            }
+          ])
+        } else if (e.response.status >= 300 ) {
+          setChats([
+            ...chats
+          ])
+          showToast('现在业务繁忙，请稍后再试')
         }
       });
   };
@@ -669,7 +707,7 @@ export function Chat() {
               {!showChatList && <ChatContent chats={chats} userInfo={userInfo} onRecharge={() => setRechargeModalOpen(true)} onShare={handleShare} />}
 
               {!showChatList && <Box mx={2} my={1.5} position="relative">
-                {presetQuestions.length > 0 && !showChatList && <Box pt={1} borderTop="1px solid #dedede">
+                {presetQuestions.length > 0 && !showChatList && characters.find((item: any)=> item.id === characterId)?.recommendEnable && <Box pt={1} borderTop="1px solid #dedede">
                   <Stack direction="row" sx={{
                     overflowY: 'auto', 
                     flexFlow: {
