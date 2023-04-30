@@ -95,7 +95,7 @@ export class ChatController {
       }
     } catch (err) {
       res.setHeader('Content-Type', 'application/json')
-      throw new HttpException(err.message, err.status)
+      throw new HttpException(err.message, err.status || 500)
     }
   }
 }

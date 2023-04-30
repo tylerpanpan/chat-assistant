@@ -151,7 +151,7 @@ export function Chat() {
   useEffect(()=> {
     const character = characters?.find((item: any)=> item.id === characterId)
     if(character && character.recommendEnable) {
-      recommendQuestion(curCharacter.id)
+      recommendQuestion(character.id)
     }
   }, [characterId, characters])
 
@@ -313,7 +313,12 @@ export function Chat() {
           }
           // 处理接收到的文本数据
           const _value = value.replace(/data: "(.*)"\n\n/g, '$1')
-          streamText += JSON.parse(`"${_value}"`)
+          console.info(_value, typeof _value)
+          try {
+            streamText += JSON.parse(`"${_value}"`)
+          }catch(e) {
+            streamText += _value
+          }
 
           setChats([
             ...chats,

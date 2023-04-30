@@ -16,6 +16,7 @@ import { GPTModel } from "libs/openai-lib/src/enums/GPTModel";
 import { SysConfigService } from "../config/sysConfig.service";
 import { ModelUsage } from "./entities/model-usage.entity";
 import moment from "moment";
+import { AIChatMessage, SystemChatMessage, HumanChatMessage } from "langchain/schema";
 
 
 @Injectable()
@@ -141,28 +142,38 @@ export class ChatService {
 
 
     const chatPrompt = ChatPromptTemplate.fromPromptMessages([
-      SystemMessagePromptTemplate.fromTemplate(chat.character.definition),
+      SystemMessagePromptTemplate.fromTemplate("{definition}"),
       new MessagesPlaceholder("history"),
+      // HumanMessagePromptTemplate.fromTemplate("{input}"),
       HumanMessagePromptTemplate.fromTemplate("{input}"),
     ])
 
     const contexts = this.openaiLib.buildContext(chat.messages, chat.character.definition, 2048)
     const filteredContext = contexts.filter(ctx => !ctx.isDeleted)
 
-    const history = new ChatMessageHistory()
-    filteredContext.forEach(msg => {
-      if (msg.role === 'assistant') {
-        history.addAIChatMessage(msg.content)
-      } else if (msg.role === 'user') {
-        history.addUserMessage(msg.content)
+    // const history = new ChatMessageHistory()
+
+    const messages = filteredContext.map(ctx => {
+      if(ctx.role === 'assistant') {
+        return new AIChatMessage(ctx.content)
+      }else if(ctx.role === 'user') {
+        return new HumanChatMessage(ctx.content)
       }
     })
 
-    const memory = new BufferMemory({
-      chatHistory: history,
-      returnMessages: true,
-      memoryKey: `history`,
-    });
+    // filteredContext.forEach(msg => {
+    //   if (msg.role === 'assistant') {
+    //     history.addAIChatMessage(msg.content)
+    //   } else if (msg.role === 'user') {
+    //     history.addUserMessage(msg.content)
+    //   }
+    // })
+
+    // const memory = new BufferMemory({
+    //   chatHistory: history,
+    //   returnMessages: true,
+    //   memoryKey: `history`,
+    // });
 
     let totalTokens = 0
 
@@ -187,13 +198,15 @@ export class ChatService {
       organization: this.configService.get('system.openAiOrgId')
     })
 
-    const chain = new ConversationChain({
-      memory,
-      llm: chatModel,
-      prompt: chatPrompt,
-    })
+    const {text: response} = await chatModel.call([ new SystemChatMessage(chat.character.definition),...messages])
 
-    const { response } = await chain.call({ input: text });
+    // const chain = new ConversationChain({
+    //   memory,
+    //   llm: chatModel,
+    //   prompt: chatPrompt,
+    // })
+
+    // const { response } = await chain.call({ input: text, definition: chat.character.definition });
 
     totalTokens = totalTokens || this.openaiLib.countMessageToken([...this.openaiLib.buildMessages(text, chat.character.definition, filteredContext), { role: 'assistant', content: response }])
 
