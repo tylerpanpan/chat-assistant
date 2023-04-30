@@ -707,7 +707,7 @@ export function Chat() {
               {!showChatList && <ChatContent chats={chats} userInfo={userInfo} onRecharge={() => setRechargeModalOpen(true)} onShare={handleShare} />}
 
               {!showChatList && <Box mx={2} my={1.5} position="relative">
-                {presetQuestions.length > 0 && !showChatList && characters.find((item: any)=> item.id === characterId)?.recommendEnable && <Box pt={1} borderTop="1px solid #dedede">
+                {presetQuestions.length > 0 && !showChatList && characters?.find((item: any)=> item.id === characterId)?.recommendEnable && <Box pt={1} borderTop="1px solid #dedede">
                   <Stack direction="row" sx={{
                     overflowY: 'auto', 
                     flexFlow: {
