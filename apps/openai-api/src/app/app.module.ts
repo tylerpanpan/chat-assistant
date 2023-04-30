@@ -16,6 +16,7 @@ import alipayConfig from '../config/alipay.config';
 import { OrderModule } from './order/order.module';
 import { UploadModule } from './upload/upload.module';
 import ossConfig from '../config/oss.config';
+import { RecommendModule } from './recommend/recommend.module';
 import { SysConfigModule } from './config/sysConfig.module';
 
 @Module({
@@ -58,6 +59,7 @@ import { SysConfigModule } from './config/sysConfig.module';
     ChatModule,
     OrderModule,
     UploadModule,
+    RecommendModule,
     SysConfigModule
   ],
   controllers: [AppController],

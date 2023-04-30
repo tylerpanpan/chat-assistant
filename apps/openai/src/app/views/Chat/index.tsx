@@ -40,7 +40,7 @@ import './index.scss';
 const drawerWidth = 320;
 
 export function Chat() {
-  const { characterApi, chatApi, userApi } = useAPI();
+  const { characterApi, chatApi, userApi, recommendApi } = useAPI();
   const { token, showLogin, login, logout } = useAuth();
   const { showDialog, showToast } = useFeedback();
   const [characterId, setCharacterId] = useState<null | number>();
@@ -140,6 +140,20 @@ export function Chat() {
     }
   );
 
+  const recommendQuestion = (_characterId: number, text?: string)=> {
+    recommendApi.recommendQuestions(_characterId, text).then(res=> {
+      if(typeof res === 'object') {
+        setPresetQuestions(res)
+      }
+    })
+  }
+
+  useEffect(()=> {
+    if(curCharacter && curCharacter.recommendEnable) {
+      recommendQuestion(curCharacter.id)
+    }
+  }, [curCharacter])
+
   useEffect(() => {
     if (characters) {
       let _characterId: number;
@@ -221,6 +235,11 @@ export function Chat() {
         loading: true,
       }
     ]);
+    
+    if(curCharacter && curCharacter.recommendEnable && (text || question || "").length >= 6) {
+      recommendQuestion(curCharacter.id, text || question)
+    }
+
     chatApi
       .chat(chat.id, question || text, true)
       .then((response: any) => {
@@ -277,14 +296,12 @@ export function Chat() {
               ])
               showToast('现在业务繁忙，请稍后再试')
             }
-            console.info(response.status)
             setSending(false);
             refetchUserInfo();
             return;
           }
           // 处理接收到的文本数据
           const _value = value.replace(/data: "(.*)"\n\n/g, '$1')
-          console.info(_value)
           streamText += JSON.parse(`"${_value}"`)
 
           setChats([
@@ -302,7 +319,6 @@ export function Chat() {
       })
       .catch((e) => {
         setSending(false);
-        console.info(e.response)
         if (e.response.status === 402) {
           setChats([
             ...chats,
@@ -654,10 +670,17 @@ export function Chat() {
 
               {!showChatList && <Box mx={2} my={1.5} position="relative">
                 {presetQuestions.length > 0 && !showChatList && <Box pt={1} borderTop="1px solid #dedede">
-                  <Stack direction="row" sx={{overflowY: 'auto', flexFlow: 'wrap'}}>
+                  <Stack direction="row" sx={{
+                    overflowY: 'auto', 
+                    flexFlow: {
+                      sm: 'row wrap',
+                      xs: 'row nowrap'
+                    },
+                
+                  }}>
                     {
                       presetQuestions.map((question, index) => (
-                        <Button key={index} variant="outlined" size="small" sx={{whiteSpace: 'nowrap', marginRight: '10px', marginBottom: '8px'}} onClick={() => handleSend(question)}>{question}</Button>
+                        <Button key={index} variant="outlined" size="small" sx={{whiteSpace: 'nowrap',flexShrink: 0, marginRight: '10px', marginBottom: '8px'}} onClick={() => handleSend(question)}>{question}</Button>
                       ))
                     }
                   </Stack>
@@ -677,8 +700,8 @@ export function Chat() {
                       resize: 'none',
                       outline: 'none'
                     }}
-                    rows={3}
                     maxRows={4}
+                    minRows={3}
                     multiline
                     fullWidth
                     disabled={sending}
