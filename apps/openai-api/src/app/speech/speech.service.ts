@@ -2,7 +2,7 @@ import { EntityManager } from "@mikro-orm/core";
 import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { Character } from "../character/character.entity";
-import SpeechSDK from 'microsoft-cognitiveservices-speech-sdk';
+import * as SpeechSDK from 'microsoft-cognitiveservices-speech-sdk';
 import { PassThrough } from "stream";
 import { error } from "console";
 

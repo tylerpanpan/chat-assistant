@@ -9,6 +9,7 @@ import mila from "markdown-it-link-attributes";
 import hljs from "highlight.js";
 import "katex/dist/katex.css";
 import "highlight.js/styles/atom-one-dark.css";
+import { useAudio } from "../../../provider/AudioProvider";
 
 interface ChatContentProps {
   chats: any[];
@@ -45,6 +46,7 @@ export function ChatContent({
 	const { showToast } = useFeedback();
 	const { showLogin } = useAuth();
 	const chatEndRef = useRef<HTMLDivElement>(null);
+	const { tts } = useAudio();
 	
 	// 虚拟滚动相关
 	const count = chats.length
@@ -79,6 +81,10 @@ export function ChatContent({
     document.body.removeChild(dummy);
     showToast("已拷贝到剪贴板");
   }
+
+	const handlePlay = (text: string) => () => {
+		tts(text)
+	}
 
 	return (
 		<>
@@ -138,6 +144,7 @@ export function ChatContent({
 											>
 												<Typography variant="caption" className="action-btn" onClick={() => copyText(chats[virtualRow.index])}>复制</Typography>
 												{/* <Typography variant="caption" className="action-btn" onClick={() => handleDeleteChat(chats[virtualRow.index])}>删除</Typography> */}
+												<Typography variant="caption" className="action-btn" onClick={ handlePlay(chats[virtualRow.index].content)}>播放</Typography>
 											</Box>
 										)}
 										{chats[virtualRow.index].loading ? (

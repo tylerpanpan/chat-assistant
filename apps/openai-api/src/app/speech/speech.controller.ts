@@ -1,9 +1,6 @@
 import { Controller, Get, Query, Res, UseGuards } from "@nestjs/common";
 import { SpeechService } from "./speech.service";
-import * as SpeechSDK from 'microsoft-cognitiveservices-speech-sdk';
 import { Response } from "express";
-import { ConfigService } from "@nestjs/config";
-import { PassThrough } from "stream";
 import { AuthGuard } from "@nestjs/passport";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 
