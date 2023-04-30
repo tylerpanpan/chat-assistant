@@ -8,13 +8,15 @@ import { InjectRepository } from '@mikro-orm/nestjs';
 import { EntityRepository, FilterQuery } from '@mikro-orm/core';
 import { Role } from '../role/role.decorator';
 import { ConfigService } from '@nestjs/config';
+import { SysConfigService } from '../config/sysConfig.service';
 @Injectable()
 export class UserService {
 
   constructor(
     @InjectRepository(User)
     private userRepo: EntityRepository<User>,
-    private configService: ConfigService
+    private configService: ConfigService,
+    private sysConfigService: SysConfigService
   ) { }
 
   async create({ username, password, referUserId }: CreateUserDto) {
@@ -28,15 +30,17 @@ export class UserService {
       referUser = await this.userRepo.findOne({ id: referUserId })
     }
 
+    const userDefaultTokens = await this.sysConfigService.getConfigByKey('system.userDefaultTokens')
     const result = await this.userRepo.nativeInsert({
       username,
       password: this.createPassword(username, password),
       referUser,
-      balance: +this.configService.get('system.userDefaultTokens') || 0,
+      balance: +userDefaultTokens || 0,
     }, {});
 
     if (referUser) {
-      referUser.balance = +referUser.balance + (+this.configService.get('system.inviteRewardTokens') || 0);
+      const inviteRewardTokens = await this.sysConfigService.getConfigByKey('system.inviteRewardTokens')
+      referUser.balance = +referUser.balance + (+inviteRewardTokens || 0);
       await this.userRepo.flush();
     }
 
@@ -66,19 +70,21 @@ export class UserService {
     //  balance: 5,
     //  password: this.userService.createPassword(body.username, body.password),
     //  ip: null
+    const userDefaultTokens = await this.sysConfigService.getConfigByKey('system.userDefaultTokens')
     user.email = username
     user.username = username
     user.type = Role.User
-    user.balance = +this.configService.get('system.userDefaultTokens') || 0
+    user.balance = +userDefaultTokens || 0
     user.password = this.createPassword(username, password)
     user.ip = null
     user.referUser = referUser
-    console.info(this.configService.get('system.userDefaultTokens'),user.balance)
+    console.info(userDefaultTokens,user.balance)
     await this.userRepo.flush()
 
     if (referUser) {
-      referUser.balance = +referUser.balance + (+this.configService.get('system.inviteRewardTokens') || 0);
-      console.info(this.configService.get('system.inviteRewardTokens'),referUser.balance)
+      const inviteRewardTokens = await this.sysConfigService.getConfigByKey('system.inviteRewardTokens')
+      referUser.balance = +referUser.balance + (+inviteRewardTokens || 0);
+      console.info(inviteRewardTokens,referUser.balance)
       await this.userRepo.flush();
     }
     return user;

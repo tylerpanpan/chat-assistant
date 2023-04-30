@@ -13,6 +13,7 @@ import { ConversationChain } from 'langchain/chains'
 import { ChatPromptTemplate, HumanMessagePromptTemplate, MessagesPlaceholder, SystemMessagePromptTemplate } from "langchain/prompts";
 import { CallbackManager } from "langchain/callbacks";
 import { GPTModel } from "libs/openai-lib/src/enums/GPTModel";
+import { SysConfigService } from "../config/sysConfig.service";
 
 
 @Injectable()
@@ -25,7 +26,8 @@ export class ChatService {
     @InjectRepository(Chat)
     private chatRepo: EntityRepository<Chat>,
     private em: EntityManager,
-    private configService: ConfigService
+    private configService: ConfigService,
+    private sysConfigService: SysConfigService,
   ) {
     this.openaiLib = new OpenAILib(configService.get('system.openAiKey'), configService.get('system.openAiBasePath'));
   }
@@ -85,7 +87,9 @@ export class ChatService {
     const userRepo = this.em.getRepository(User);
     const u = await userRepo.findOne({ id: user.id })
 
-    if (u.type === Role.Guest && user.messageCount >= (+this.configService.get('system.guestMessageLimit') || 10)) {
+    const guestMessageLimit = await this.sysConfigService.getConfigByKey('system.guestMessageLimit')
+
+    if (u.type === Role.Guest && user.messageCount >= (+guestMessageLimit || 10)) {
       throw new HttpException('You have reached the limit of messages', 403)
     }
 
@@ -163,7 +167,8 @@ export class ChatService {
     await this.chatRepo.flush()
 
     if (u.type !== Role.Guest) {
-      const pricePerThousandTokens = +this.configService.get('system.pricePerThousandTokens') || 0.07
+      const defaultPricePerThousandTokens = await this.sysConfigService.getConfigByKey('system.pricePerThousandTokens')
+      const pricePerThousandTokens = +defaultPricePerThousandTokens || 0.07
       u.tokens += totalTokens || 0
       u.balance -= (totalTokens || 0) / 1000 * pricePerThousandTokens
     }
