@@ -185,6 +185,7 @@ export function Chat() {
   );
 
   const handleChooseCharacter = (id: number) => () => {
+    if (characterId === id) return
     setMobileOpen(false);
     setCharacterId(id);
     setChats([]);
