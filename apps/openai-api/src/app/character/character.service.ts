@@ -37,7 +37,11 @@ export class CharacterService {
     character.welcome = dto.welcome;
     character.presetQuestions = dto.presetQuestions;
     character.description = dto.description;
-
+    character.isPublic = dto.isPublic;
+    character.model = dto.model;
+    character.temperature = dto.temperature;
+    character.frequencyPenalty = dto.frequencyPenalty;
+    
     await this.characterRepository.persistAndFlush(character)
 
     return character;
@@ -55,7 +59,10 @@ export class CharacterService {
     character.welcome = dto.welcome;
     character.presetQuestions = dto.presetQuestions;
     character.description = dto.description;
-
+    character.isPublic = dto.isPublic;
+    character.model = dto.model;
+    character.temperature = dto.temperature;
+    character.frequencyPenalty = dto.frequencyPenalty;
     await this.characterRepository.flush()
     return character;
   }

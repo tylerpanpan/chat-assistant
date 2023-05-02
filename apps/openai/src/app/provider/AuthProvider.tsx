@@ -4,8 +4,8 @@ import { useNavigate } from 'react-router';
 import { useBlocker } from 'react-router/dist/lib/hooks';
 import { LoginModal } from '../components/LoginModal';
 import localForage from "localforage";
-const STORE_TOKEN_KEY = '__app_token';
-const STORE_USER_KEY = '__app_user';
+export const STORE_TOKEN_KEY = '__app_token';
+export const STORE_USER_KEY = '__app_user';
 
 interface AuthContextType {
   token?: string;

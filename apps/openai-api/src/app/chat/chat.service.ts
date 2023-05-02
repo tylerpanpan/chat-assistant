@@ -181,6 +181,8 @@ export class ChatService {
       openAIApiKey: this.configService.get('system.openAiKey'),
       streaming: stream,
       modelName: chat.character.model || GPTModel.GPT35TURBO0301,
+      temperature: chat.character.temperature || 1,
+      frequencyPenalty: chat.character.frequencyPenalty || 0,
       callbackManager: CallbackManager.fromHandlers({
         handleLLMEnd: async (llmresult) => {
           const tokenUsage = llmresult.llmOutput?.tokenUsage

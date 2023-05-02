@@ -31,8 +31,6 @@ export class UploadController {
     @Req() { user }
   ) {
     const ret = await this.uploadService.uploadToOSS(file, user)
-    return {
-      url: ret
-    }
+    return ret;
   }
 }

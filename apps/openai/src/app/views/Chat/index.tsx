@@ -238,8 +238,8 @@ export function Chat() {
       }
     ]);
     
-    if(curCharacter && curCharacter.recommendEnable && (text || question || "").length >= 6) {
-      recommendQuestion(curCharacter.id, text || question)
+    if(currentCharacter && currentCharacter.recommendEnable && (text || question || "").length >= 6) {
+      recommendQuestion(currentCharacter.id, text || question)
     }
 
     chatApi
@@ -384,6 +384,7 @@ export function Chat() {
   };
 
   const handleCharacterCreated = () => {
+    setCurCharacter(null)
     setShowCreateCharacterModal(false);
     refetchCharacter();
   };
@@ -773,7 +774,10 @@ export function Chat() {
           open={showCreateCharacterModal}
           character={curCharacter}
           onCreated={handleCharacterCreated}
-          onClose={() => setShowCreateCharacterModal(false)}
+          onClose={() => {
+            setShowCreateCharacterModal(false)
+            setCurCharacter(null)
+          }}
         />
         <RechargeModal open={rechargeModalOpen} onClose={()=> setRechargeModalOpen(false)}/>
       </Box>
