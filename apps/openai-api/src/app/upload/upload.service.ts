@@ -32,6 +32,6 @@ export class UploadService {
     //upload file to oss
     const result = await this.client.put(fileName, file.path)
 
-    return result.url
+    return `${this.configService.get('oss.domain')}/${result.name}`
   }
 }
