@@ -36,6 +36,7 @@ import { ChatList } from "./components/ChatList";
 import localForage from "localforage";
 import { getUrlParams } from "../../utils"
 import './index.scss';
+import { useAudio } from "../../provider/AudioProvider";
 
 const drawerWidth = 320;
 
@@ -63,6 +64,8 @@ export function Chat() {
   const handleCloseMore = () => {
     setAnchorEl(null);
   };
+
+  const { stop } = useAudio()
 
   // 判断是否是游客，新用户
   useEffect(() => {
@@ -176,6 +179,10 @@ export function Chat() {
     }
   }, [characters, characterId]);
 
+  useEffect(() => {
+    stop()
+  },[characterId])
+
   const [chats, setChats] = useState<
     { role: "user" | "assistant" | "recharge" | "guest" | "gpt4limit"; content: string; loading?: boolean }[]
   >([]);
@@ -203,6 +210,7 @@ export function Chat() {
     characterApi
       .deleteCharacter(`${id}`)
       .then(() => {
+        stop();
         showToast('删除成功');
         if (id === characterId) {
           setChats([])
@@ -411,6 +419,7 @@ export function Chat() {
     if (!chat) return;
     showDialog("确定要清除会话吗?", "清除会话", "取消", "确定", (confirm) => {
       if (confirm == 1) {
+        stop()
         chatApi
           .clearMessage(chat.id)
           .then((res) => {
@@ -432,6 +441,7 @@ export function Chat() {
       .createChat(characterId)
       .then((res) => {
         showToast('新会话创建成功');
+        stop()
         setChats([])
         setChat(res)
         localForage.getItem('character-chat').then((mapData: any) => {
@@ -453,6 +463,7 @@ export function Chat() {
     chatApi
       .getCharacterChat(characterId)
       .then((res) => {
+        stop()
         if (res.length > 0) {
           setAllChats(res)
           setShowChatList(true);
@@ -711,7 +722,7 @@ export function Chat() {
               {/* 所有会话消息 */}
               {showChatList && <ChatList allChats={allChats} onChoose={handleChooseChat} onDelete={handleDeleteChat} />}
               {/* 当前会话内容 */}
-              {!showChatList && <ChatContent chats={chats} userInfo={userInfo} onRecharge={() => setRechargeModalOpen(true)} onShare={handleShare} />}
+              {!showChatList && <ChatContent character={currentCharacter} chats={chats} userInfo={userInfo} onRecharge={() => setRechargeModalOpen(true)} onShare={handleShare} />}
 
               {!showChatList && <Box mx={2} my={1.5} position="relative">
                 {presetQuestions.length > 0 && !showChatList && characters?.find((item: any)=> item.id === characterId)?.recommendEnable && <Box pt={1} borderTop="1px solid #dedede">

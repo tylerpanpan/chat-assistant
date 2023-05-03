@@ -3,6 +3,7 @@ import { SpeechService } from "./speech.service";
 import { Response } from "express";
 import { AuthGuard } from "@nestjs/passport";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
+import { Throttle } from "@nestjs/throttler";
 
 @Controller('speech')
 @UseGuards(AuthGuard('jwt'))
@@ -19,6 +20,7 @@ export class SpeechController {
 
   // text to speech (tts) uising stream
   @Get('tts')
+  @Throttle(5, 1)
   async textToSpeech(
     @Query('text') text: string,
     @Res() res: Response

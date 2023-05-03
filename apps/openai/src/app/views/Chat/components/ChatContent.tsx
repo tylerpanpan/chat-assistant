@@ -14,6 +14,7 @@ import { useAudio } from "../../../provider/AudioProvider";
 interface ChatContentProps {
   chats: any[];
   userInfo: any;
+	character?: any;
 	onRecharge: () => void;
   onShare: () => void;
 }
@@ -40,13 +41,14 @@ mdi.use(mdKatex, { blockClass: 'katexmath-block rounded-md p-[10px]', errorColor
 export function ChatContent({
 	chats,
   userInfo,
+	character,
 	onRecharge,
   onShare
 }: ChatContentProps) {
 	const { showToast } = useFeedback();
 	const { showLogin } = useAuth();
 	const chatEndRef = useRef<HTMLDivElement>(null);
-	const { tts } = useAudio();
+	const { tts, append } = useAudio();
 	
 	// 虚拟滚动相关
 	const count = chats.length
@@ -82,9 +84,22 @@ export function ChatContent({
     showToast("已拷贝到剪贴板");
   }
 
-	const handlePlay = (text: string) => () => {
+	const [currentPlayIndex, setCurrentPlayIndex] = useState<number | null>(null);
+	const [playedText, setPlayedText] = useState<string | null>(null);
+	const handlePlay = (index: number) => () => {
+		const text = chats[index].content;
+		setCurrentPlayIndex(index)
+		setPlayedText(text)
 		tts(text)
 	}
+
+	useEffect(()=> {
+		if(currentPlayIndex && playedText && chats[currentPlayIndex]?.content !== playedText && character?.isAudioOutput) {
+			const appendData = chats[currentPlayIndex]?.content.replace(playedText, '')
+			setPlayedText(chats[currentPlayIndex]?.content)
+			append(appendData)
+		}
+	},[chats, currentPlayIndex, playedText]);
 
 	return (
 		<>
@@ -144,7 +159,7 @@ export function ChatContent({
 											>
 												<Typography variant="caption" className="action-btn" onClick={() => copyText(chats[virtualRow.index])}>复制</Typography>
 												{/* <Typography variant="caption" className="action-btn" onClick={() => handleDeleteChat(chats[virtualRow.index])}>删除</Typography> */}
-												<Typography variant="caption" className="action-btn" onClick={ handlePlay(chats[virtualRow.index].content)}>播放</Typography>
+												{character?.isAudioOutput && <Typography variant="caption" className="action-btn" onClick={ handlePlay(virtualRow.index)}>播放</Typography>}
 											</Box>
 										)}
 										{chats[virtualRow.index].loading ? (
