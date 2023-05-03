@@ -6,6 +6,7 @@ import { CssBaseline } from '@mui/material';
 import Chat from './views/Chat';
 import { AuthProvider } from './provider/AuthProvider';
 import FeedbackProvider from './components/Feedback';
+import { AudioProvider } from './provider/AudioProvider';
 
 export function App() {
   const client = new QueryClient();
@@ -29,7 +30,9 @@ export function App() {
       <QueryClientProvider client={client}>
         <FeedbackProvider>
           <AuthProvider>
-            <RouterProvider router={router} />
+            <AudioProvider>
+              <RouterProvider router={router} />
+            </AudioProvider>
           </AuthProvider>
         </FeedbackProvider>
       </QueryClientProvider>

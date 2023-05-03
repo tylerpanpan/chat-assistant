@@ -9,10 +9,12 @@ import mila from "markdown-it-link-attributes";
 import hljs from "highlight.js";
 import "katex/dist/katex.css";
 import "highlight.js/styles/atom-one-dark.css";
+import { useAudio } from "../../../provider/AudioProvider";
 
 interface ChatContentProps {
   chats: any[];
   userInfo: any;
+	character?: any;
 	onRecharge: () => void;
   onShare: () => void;
 }
@@ -39,12 +41,14 @@ mdi.use(mdKatex, { blockClass: 'katexmath-block rounded-md p-[10px]', errorColor
 export function ChatContent({
 	chats,
   userInfo,
+	character,
 	onRecharge,
   onShare
 }: ChatContentProps) {
 	const { showToast } = useFeedback();
 	const { showLogin } = useAuth();
 	const chatEndRef = useRef<HTMLDivElement>(null);
+	const { tts, append } = useAudio();
 	
 	// 虚拟滚动相关
 	const count = chats.length
@@ -79,6 +83,23 @@ export function ChatContent({
     document.body.removeChild(dummy);
     showToast("已拷贝到剪贴板");
   }
+
+	const [currentPlayIndex, setCurrentPlayIndex] = useState<number | null>(null);
+	const [playedText, setPlayedText] = useState<string | null>(null);
+	const handlePlay = (index: number) => () => {
+		const text = chats[index].content;
+		setCurrentPlayIndex(index)
+		setPlayedText(text)
+		tts(text)
+	}
+
+	useEffect(()=> {
+		if(currentPlayIndex && playedText && chats[currentPlayIndex]?.content !== playedText && character?.isAudioOutput) {
+			const appendData = chats[currentPlayIndex]?.content.replace(playedText, '')
+			setPlayedText(chats[currentPlayIndex]?.content)
+			append(appendData)
+		}
+	},[chats, currentPlayIndex, playedText]);
 
 	return (
 		<>
@@ -138,6 +159,7 @@ export function ChatContent({
 											>
 												<Typography variant="caption" className="action-btn" onClick={() => copyText(chats[virtualRow.index])}>复制</Typography>
 												{/* <Typography variant="caption" className="action-btn" onClick={() => handleDeleteChat(chats[virtualRow.index])}>删除</Typography> */}
+												{character?.isAudioOutput && <Typography variant="caption" className="action-btn" onClick={ handlePlay(virtualRow.index)}>播放</Typography>}
 											</Box>
 										)}
 										{chats[virtualRow.index].loading ? (

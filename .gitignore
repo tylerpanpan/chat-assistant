@@ -44,3 +44,4 @@ Thumbs.db
 *.pem
 
 #lock files
+package-lock.json
