@@ -42,4 +42,23 @@ export class Character {
 
   @Property({ nullable: true, default: false })
   isGuestAccess: boolean;
+
+  @Property({ nullable: true, default: false })
+  recommendEnable: boolean;
+
+  @Property({ nullable: true, default: false })
+  recommendFocus: boolean;
+
+  @Property({ nullable: true, default: 1, type: 'float'})
+  temperature: number;
+
+  @Property({ nullable: true, default: 0, type: 'float' })
+  frequencyPenalty: number;
+
+  @Property({ nullable: true, default: false})
+  isAudioOutput: boolean;
+
+  @Property({ nullable: true })
+  speechModel: string;
+
 }

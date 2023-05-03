@@ -1,4 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
+import { GPTModel } from "libs/openai-lib/src/enums/GPTModel";
 
 export class CreateCharacterDto {
   @ApiProperty()
@@ -31,4 +32,19 @@ export class CreateCharacterDto {
     required: false
   })
   description?: string;
+
+  @ApiProperty({
+    required: false
+  })
+  model?: GPTModel;
+
+  @ApiProperty({
+    required: false
+  })
+  temperature?: number;
+
+  @ApiProperty({
+    required: false
+  })
+  frequencyPenalty?: number;
 }

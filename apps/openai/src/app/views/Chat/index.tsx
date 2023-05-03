@@ -40,7 +40,7 @@ import './index.scss';
 const drawerWidth = 320;
 
 export function Chat() {
-  const { characterApi, chatApi, userApi } = useAPI();
+  const { characterApi, chatApi, userApi, recommendApi } = useAPI();
   const { token, showLogin, login, logout } = useAuth();
   const { showDialog, showToast } = useFeedback();
   const [characterId, setCharacterId] = useState<null | number>();
@@ -140,6 +140,21 @@ export function Chat() {
     }
   );
 
+  const recommendQuestion = (_characterId: number, text?: string)=> {
+    recommendApi.recommendQuestions(_characterId, text).then(res=> {
+      if(typeof res === 'object') {
+        setPresetQuestions(res)
+      }
+    })
+  }
+
+  useEffect(()=> {
+    const character = characters?.find((item: any)=> item.id === characterId)
+    if(character && character.recommendEnable) {
+      recommendQuestion(character.id)
+    }
+  }, [characterId, characters])
+
   useEffect(() => {
     if (characters) {
       let _characterId: number;
@@ -170,6 +185,7 @@ export function Chat() {
   );
 
   const handleChooseCharacter = (id: number) => () => {
+    if (characterId === id) return
     setMobileOpen(false);
     setCharacterId(id);
     setChats([]);
@@ -221,10 +237,54 @@ export function Chat() {
         loading: true,
       }
     ]);
+    
+    if(currentCharacter && currentCharacter.recommendEnable && (text || question || "").length >= 6) {
+      recommendQuestion(currentCharacter.id, text || question)
+    }
+
     chatApi
       .chat(chat.id, question || text, true)
       .then((response: any) => {
         const reader = response.body.getReader();
+        if (response.status === 402) {
+          setChats([
+            ...chats,
+            {
+              'role': 'recharge',
+              'content': 'Tokens不足，请充值',
+            }
+          ])
+          setSending(false);
+          return;
+        } else if (response.status === 403) {
+          setChats([
+            ...chats,
+            {
+              'role': 'guest',
+              'content': '您已达到10次使用限制',
+            }
+          ])
+          setSending(false);
+          return;
+        } else if (response.status === 419) {
+          setChats([
+            ...chats,
+            {
+              'role': 'gpt4limit',
+              'content': '您的GPT-4使用次数已耗尽，请邀请好友注册或充值获得更多次数',
+            }
+          ])
+          setSending(false);
+          return;
+        } else if (response.status >= 300 ) {
+          setChats([
+            ...chats
+          ])
+          setSending(false);
+          showToast('现在业务繁忙，请稍后再试')
+          return;
+        }
+      
         const stream = new ReadableStream({
           start(controller) {
             function push() {
@@ -247,45 +307,19 @@ export function Chat() {
         textStream.read().then(function processText({ done, value }) {
           if (done) {
             console.log('Stream complete', streamText);
-            if (response.status === 402) {
-              setChats([
-                ...chats,
-                {
-                  'role': 'recharge',
-                  'content': 'Tokens不足，请充值',
-                }
-              ])
-            } else if (response.status === 403) {
-              setChats([
-                ...chats,
-                {
-                  'role': 'guest',
-                  'content': '您已达到10次使用限制',
-                }
-              ])
-            } else if (response.status === 419) {
-              setChats([
-                ...chats,
-                {
-                  'role': 'gpt4limit',
-                  'content': '您的GPT-4使用次数已耗尽，请邀请好友注册或充值获得更多次数',
-                }
-              ])
-            } else if (response.status >= 300 ) {
-              setChats([
-                ...chats
-              ])
-              showToast('现在业务繁忙，请稍后再试')
-            }
-            console.info(response.status)
+           
             setSending(false);
             refetchUserInfo();
             return;
           }
           // 处理接收到的文本数据
           const _value = value.replace(/data: "(.*)"\n\n/g, '$1')
-          console.info(_value)
-          streamText += JSON.parse(`"${_value}"`)
+          console.info(_value, typeof _value)
+          try {
+            streamText += JSON.parse(`"${_value}"`)
+          }catch(e) {
+            streamText += _value
+          }
 
           setChats([
             ...chats,
@@ -302,7 +336,6 @@ export function Chat() {
       })
       .catch((e) => {
         setSending(false);
-        console.info(e.response)
         if (e.response.status === 402) {
           setChats([
             ...chats,
@@ -311,8 +344,35 @@ export function Chat() {
               'content': 'Tokens不足，请充值',
             }
           ])
-        } else {
-          showToast(e.message);
+        } if (e.response.status === 402) {
+          setChats([
+            ...chats,
+            {
+              'role': 'recharge',
+              'content': 'Tokens不足，请充值',
+            }
+          ])
+        } else if (e.response.status === 403) {
+          setChats([
+            ...chats,
+            {
+              'role': 'guest',
+              'content': '您已达到10次使用限制',
+            }
+          ])
+        } else if (e.response.status === 419) {
+          setChats([
+            ...chats,
+            {
+              'role': 'gpt4limit',
+              'content': '您的GPT-4使用次数已耗尽，请邀请好友注册或充值获得更多次数',
+            }
+          ])
+        } else if (e.response.status >= 300 ) {
+          setChats([
+            ...chats
+          ])
+          showToast('现在业务繁忙，请稍后再试')
         }
       });
   };
@@ -324,6 +384,7 @@ export function Chat() {
   };
 
   const handleCharacterCreated = () => {
+    setCurCharacter(null)
     setShowCreateCharacterModal(false);
     refetchCharacter();
   };
@@ -653,11 +714,18 @@ export function Chat() {
               {!showChatList && <ChatContent chats={chats} userInfo={userInfo} onRecharge={() => setRechargeModalOpen(true)} onShare={handleShare} />}
 
               {!showChatList && <Box mx={2} my={1.5} position="relative">
-                {presetQuestions.length > 0 && !showChatList && <Box pt={1} borderTop="1px solid #dedede">
-                  <Stack direction="row" sx={{overflowY: 'auto', flexFlow: 'wrap'}}>
+                {presetQuestions.length > 0 && !showChatList && characters?.find((item: any)=> item.id === characterId)?.recommendEnable && <Box pt={1} borderTop="1px solid #dedede">
+                  <Stack direction="row" sx={{
+                    overflowY: 'auto', 
+                    flexFlow: {
+                      sm: 'row wrap',
+                      xs: 'row nowrap'
+                    },
+                
+                  }}>
                     {
                       presetQuestions.map((question, index) => (
-                        <Button key={index} variant="outlined" size="small" sx={{whiteSpace: 'nowrap', marginRight: '10px', marginBottom: '8px'}} onClick={() => handleSend(question)}>{question}</Button>
+                        <Button key={index} variant="outlined" size="small" sx={{whiteSpace: 'nowrap',flexShrink: 0, marginRight: '10px', marginBottom: '8px'}} onClick={() => handleSend(question)}>{question}</Button>
                       ))
                     }
                   </Stack>
@@ -677,8 +745,8 @@ export function Chat() {
                       resize: 'none',
                       outline: 'none'
                     }}
-                    rows={3}
                     maxRows={4}
+                    minRows={3}
                     multiline
                     fullWidth
                     disabled={sending}
@@ -706,7 +774,10 @@ export function Chat() {
           open={showCreateCharacterModal}
           character={curCharacter}
           onCreated={handleCharacterCreated}
-          onClose={() => setShowCreateCharacterModal(false)}
+          onClose={() => {
+            setShowCreateCharacterModal(false)
+            setCurCharacter(null)
+          }}
         />
         <RechargeModal open={rechargeModalOpen} onClose={()=> setRechargeModalOpen(false)}/>
       </Box>

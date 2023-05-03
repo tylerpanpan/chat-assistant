@@ -13,8 +13,10 @@ import { ConversationChain } from 'langchain/chains'
 import { ChatPromptTemplate, HumanMessagePromptTemplate, MessagesPlaceholder, SystemMessagePromptTemplate } from "langchain/prompts";
 import { CallbackManager } from "langchain/callbacks";
 import { GPTModel } from "libs/openai-lib/src/enums/GPTModel";
+import { SysConfigService } from "../config/sysConfig.service";
 import { ModelUsage } from "./entities/model-usage.entity";
 import moment from "moment";
+import { AIChatMessage, SystemChatMessage, HumanChatMessage } from "langchain/schema";
 
 
 @Injectable()
@@ -29,7 +31,8 @@ export class ChatService {
     @InjectRepository(ModelUsage)
     private modelUsageRepo: EntityRepository<ModelUsage>,
     private em: EntityManager,
-    private configService: ConfigService
+    private configService: ConfigService,
+    private sysConfigService: SysConfigService,
   ) {
     this.openaiLib = new OpenAILib(configService.get('system.openAiKey'), configService.get('system.openAiBasePath'));
   }
@@ -108,8 +111,10 @@ export class ChatService {
     const userRepo = this.em.getRepository(User);
     const u = await userRepo.findOne({ id: user.id })
 
+    const guestMessageLimit = await this.sysConfigService.getConfigByKey('system.guestMessageLimit')
+    
     const time = moment().format('YYYY-MM-DD HH:mm')
-    if (u.type === Role.Guest && user.messageCount >= (+this.configService.get('system.guestMessageLimit') || 10)) {
+    if (u.type === Role.Guest && user.messageCount >= (+guestMessageLimit || 10)) {
       throw new HttpException('You have reached the limit of messages', 403)
     }
 
@@ -129,35 +134,46 @@ export class ChatService {
 
     const modelUsage  = await this.modelUsageRepo.findOne({ model: chat.character.model, month: moment().format('YYYY-MM') })
     if(modelUsage && chat.character.model === GPTModel.GPT4) {
-      if(modelUsage.messages >= (+this.configService.get('system.gpt4MonthlyMessageLimit') || 9000)) {
+      const gpt4MonthlyMessageLimit = await this.sysConfigService.getConfigByKey("system.gpt4MonthlyMessageLimit")
+      if(modelUsage.messages >= (+gpt4MonthlyMessageLimit || 9000)) {
         throw new HttpException('Model has reached the limit of messages', 500)
       }
     }
 
 
     const chatPrompt = ChatPromptTemplate.fromPromptMessages([
-      SystemMessagePromptTemplate.fromTemplate(chat.character.definition),
+      SystemMessagePromptTemplate.fromTemplate("{definition}"),
       new MessagesPlaceholder("history"),
+      // HumanMessagePromptTemplate.fromTemplate("{input}"),
       HumanMessagePromptTemplate.fromTemplate("{input}"),
     ])
 
     const contexts = this.openaiLib.buildContext(chat.messages, chat.character.definition, 2048)
     const filteredContext = contexts.filter(ctx => !ctx.isDeleted)
 
-    const history = new ChatMessageHistory()
-    filteredContext.forEach(msg => {
-      if (msg.role === 'assistant') {
-        history.addAIChatMessage(msg.content)
-      } else if (msg.role === 'user') {
-        history.addUserMessage(msg.content)
+    // const history = new ChatMessageHistory()
+
+    const messages = filteredContext.map(ctx => {
+      if(ctx.role === 'assistant') {
+        return new AIChatMessage(ctx.content)
+      }else if(ctx.role === 'user') {
+        return new HumanChatMessage(ctx.content)
       }
     })
 
-    const memory = new BufferMemory({
-      chatHistory: history,
-      returnMessages: true,
-      memoryKey: `history`,
-    });
+    // filteredContext.forEach(msg => {
+    //   if (msg.role === 'assistant') {
+    //     history.addAIChatMessage(msg.content)
+    //   } else if (msg.role === 'user') {
+    //     history.addUserMessage(msg.content)
+    //   }
+    // })
+
+    // const memory = new BufferMemory({
+    //   chatHistory: history,
+    //   returnMessages: true,
+    //   memoryKey: `history`,
+    // });
 
     let totalTokens = 0
 
@@ -165,6 +181,8 @@ export class ChatService {
       openAIApiKey: this.configService.get('system.openAiKey'),
       streaming: stream,
       modelName: chat.character.model || GPTModel.GPT35TURBO0301,
+      temperature: chat.character.temperature || 1,
+      frequencyPenalty: chat.character.frequencyPenalty || 0,
       callbackManager: CallbackManager.fromHandlers({
         handleLLMEnd: async (llmresult) => {
           const tokenUsage = llmresult.llmOutput?.tokenUsage
@@ -182,13 +200,15 @@ export class ChatService {
       organization: this.configService.get('system.openAiOrgId')
     })
 
-    const chain = new ConversationChain({
-      memory,
-      llm: chatModel,
-      prompt: chatPrompt,
-    })
+    const {text: response} = await chatModel.call([ new SystemChatMessage(chat.character.definition),...messages, new HumanChatMessage(text)])
 
-    const { response } = await chain.call({ input: text });
+    // const chain = new ConversationChain({
+    //   memory,
+    //   llm: chatModel,
+    //   prompt: chatPrompt,
+    // })
+
+    // const { response } = await chain.call({ input: text, definition: chat.character.definition });
 
     totalTokens = totalTokens || this.openaiLib.countMessageToken([...this.openaiLib.buildMessages(text, chat.character.definition, filteredContext), { role: 'assistant', content: response }])
 
@@ -198,8 +218,10 @@ export class ChatService {
     await this.chatRepo.flush()
 
     if (u.type !== Role.Guest) {
-      const pricePerThousandTokens = +this.configService.get('system.pricePerThousandTokens') || 0.07
-      const gpt4PricePerThousandTokens = +this.configService.get('system.gpt4PricePerThousandTokens') || 0.756
+      const defaultPricePerThousandTokens = await this.sysConfigService.getConfigByKey('system.pricePerThousandTokens')
+      const defaultGpt4PricePerThousandTokens = await this.sysConfigService.getConfigByKey('system.gpt4PricePerThousandTokens')
+      const pricePerThousandTokens = +defaultPricePerThousandTokens || 0.07
+      const gpt4PricePerThousandTokens = +defaultGpt4PricePerThousandTokens || 0.756
       u.tokens += totalTokens || 0
       if(chat.character.model === GPTModel.GPT4) {
         u.gpt4Limit -= 1

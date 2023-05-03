@@ -86,6 +86,7 @@ export class API extends BaseAPI {
   chatApi: ChatAPI;
   orderApi: OrderAPI;
   speechApi: SpeechAPI;
+  recommendApi: RecommendAPI;
   constructor(token?: string, host?: string, logout?: () => void) {
     super(axios, host)
     this.userApi = new UserAPI(axios, host, token, logout)
@@ -93,6 +94,7 @@ export class API extends BaseAPI {
     this.chatApi = new ChatAPI(axios, host, token, logout)
     this.orderApi = new OrderAPI(axios, host, token, logout)
     this.speechApi = new SpeechAPI(axios, host, token, logout)
+    this.recommendApi = new RecommendAPI(axios, host, token, logout)
   }
 }
 
@@ -192,4 +194,10 @@ export class SpeechAPI extends BaseAPI {
   
 }
 
+export class RecommendAPI extends BaseAPI {
+
+  recommendQuestions(characterId: number,text?: string) {
+    return this.post<string>('/api/recommend/question', { characterId,text })
+  }
+}
 

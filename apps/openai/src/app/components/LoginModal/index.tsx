@@ -55,7 +55,6 @@ export function LoginModal({ ...props }: LoginModalProps) {
         if (e.response.data) {
           showToast(e.response.data.message);
         }
-        console.info(e);
       });
   };
 
@@ -69,7 +68,6 @@ export function LoginModal({ ...props }: LoginModalProps) {
         if (e.response.data) {
           showToast(e.response.data.message);
         }
-        console.info(e);
       });
   };
 

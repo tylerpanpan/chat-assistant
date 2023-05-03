@@ -17,6 +17,8 @@ import { OrderModule } from './order/order.module';
 import { UploadModule } from './upload/upload.module';
 import ossConfig from '../config/oss.config';
 import { SpeechModule } from './speech/speech.module';
+import { RecommendModule } from './recommend/recommend.module';
+import { SysConfigModule } from './config/sysConfig.module';
 
 @Module({
   imports: [
@@ -58,7 +60,9 @@ import { SpeechModule } from './speech/speech.module';
     ChatModule,
     OrderModule,
     UploadModule,
-    SpeechModule
+    SpeechModule,
+    RecommendModule,
+    SysConfigModule
   ],
   controllers: [AppController],
   providers: [AppService],
