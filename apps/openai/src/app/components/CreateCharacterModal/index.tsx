@@ -104,12 +104,12 @@ export function CreateCharacterModal({
       <DialogTitle>{character?.name ? "角色编辑" : "创建角色"}</DialogTitle>
       <DialogContent>
         <Box component="form" py={1} onSubmit={formik.handleSubmit}>
-          <UploadView 
+          {/* <UploadView 
             filePath={formik.values.avatar}
             onValueChange={(value) => {
               formik.setFieldValue("avatar", value)
             }}
-          />
+          /> */}
           <TextField
             sx={{ marginTop: "12px" }}
             label="角色名"
