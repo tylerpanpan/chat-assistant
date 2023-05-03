@@ -12,6 +12,7 @@ import {
   Radio,
   RadioGroup,
   Select,
+  Slider,
   TextField,
   Typography,
 } from "@mui/material";
@@ -110,7 +111,7 @@ export function CreateCharacterModal({
             }}
           />
           <TextField
-            sx={{ marginTop: "10px" }}
+            sx={{ marginTop: "12px" }}
             label="角色名"
             fullWidth
             name="name"
@@ -118,7 +119,7 @@ export function CreateCharacterModal({
             onChange={formik.handleChange}
           />
           <TextField
-            sx={{ marginTop: "10px" }}
+            sx={{ marginTop: "12px" }}
             label="角色定义"
             placeholder=""
             fullWidth
@@ -128,28 +129,78 @@ export function CreateCharacterModal({
             value={formik.values.definition}
             onChange={formik.handleChange}
           />
-          <TextField name="model" select value={formik.values.model} onChange={formik.handleChange} sx={{ marginTop: "10px" }} label="模型" fullWidth>
+          <TextField name="model" select value={formik.values.model} onChange={formik.handleChange} sx={{ marginTop: "12px" }} label="模型" fullWidth>
             <MenuItem value="gpt-3.5-turbo-0301">GPT-3.5</MenuItem>
             <MenuItem value="gpt-4">GPT-4</MenuItem>
           </TextField>
-          <FormControl sx={{marginTop: '10px'}}>
-            <FormLabel>随机性</FormLabel>
-            <RadioGroup name="temperature" row value={formik.values.temperature} onChange={formik.handleChange}>
+          <FormControl sx={{marginTop: '12px'}} fullWidth>
+            <FormLabel>随机性 <Typography variant="caption">低（保守，每次基本一样），中，高（创新性强，也容易出错）  </Typography></FormLabel>
+            {/* <RadioGroup name="temperature" row value={formik.values.temperature} onChange={formik.handleChange} >
               <FormControlLabel value={0} control={<Radio />} label="低"/>
               <FormControlLabel value={1} control={<Radio />} label="中"/>
               <FormControlLabel value={2} control={<Radio />} label="高"/>
-            </RadioGroup>
+            </RadioGroup> */}
+            <Slider 
+              name="temperature"
+              value={formik.values.temperature}
+              onChange={(_, value) => {
+                formik.setFieldValue("temperature", value)
+              }}
+              min={0}
+              max={2}
+              step={0.1}
+              marks={[
+                {
+                  value: 0,
+                  label: '低',
+                  
+                },
+                {
+                  value: 1,
+                  label: '中',
+                },
+                {
+                  value: 2,
+                  label: '高',
+                }, 
+              ]}
+              />
           </FormControl>
+          
           <br></br>
-          <FormControl sx={{marginTop: '10px'}}>
-            <FormLabel>重复性</FormLabel>
-            <RadioGroup name="frequencyPenalty" row value={formik.values.frequencyPenalty} onChange={formik.handleChange}>
-              <FormControlLabel value={0} control={<Radio />} label="低"/>
-              <FormControlLabel value={1} control={<Radio />} label="中"/>
+          <FormControl sx={{marginTop: '12px'}} fullWidth>
+            <FormLabel>重复性 <Typography variant="caption">低（更多重复），中，高（很少重复，尝试新词）</Typography></FormLabel>
+            {/* <RadioGroup name="frequencyPenalty" row value={formik.values.frequencyPenalty} onChange={formik.handleChange}>
+              <FormControlLabel value={-2} control={<Radio />} label="低"/>
+              <FormControlLabel value={0} control={<Radio />} label="中"/>
               <FormControlLabel value={2} control={<Radio />} label="高"/>
-            </RadioGroup>
+            </RadioGroup> */}
+            <Slider 
+              name="frequencyPenalty"
+              value={formik.values.frequencyPenalty}
+              onChange={(_, value) => {
+                formik.setFieldValue("frequencyPenalty", value)
+              }}
+              min={-2}
+              max={2}
+              step={0.1}
+              marks={[
+                {
+                  value: -2,
+                  label: '低',
+                },
+                {
+                  value: 0,
+                  label: '中',
+                },
+                {
+                  value: 2,
+                  label: '高',
+                }, 
+              ]}
+            />
           </FormControl>
-
+          
 
           <Button
             disabled={!formik.values.name || !formik.values.definition}
