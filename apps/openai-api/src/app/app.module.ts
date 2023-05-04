@@ -1,6 +1,7 @@
 import { MikroOrmModule } from '@mikro-orm/nestjs';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import databaseConfig from '../config/database.config';
 import jwtConfig from '../config/jwt.config';
 import systemConfig from '../config/system.config';
@@ -19,6 +20,7 @@ import ossConfig from '../config/oss.config';
 import { SpeechModule } from './speech/speech.module';
 import { RecommendModule } from './recommend/recommend.module';
 import { SysConfigModule } from './config/sysConfig.module';
+import { ApiKeyPoolModule } from './apiKeyPool/apiKeyPool.module';
 
 @Module({
   imports: [
@@ -32,6 +34,7 @@ import { SysConfigModule } from './config/sysConfig.module';
         ossConfig
       ]
     }),
+    ScheduleModule.forRoot(),
     ThrottlerModule.forRoot({
       ttl: 60,
       limit: 20,
@@ -51,9 +54,11 @@ import { SysConfigModule } from './config/sysConfig.module';
           charset: 'utf8mb4',
           autoLoadEntities: true,
           debug: false,
+          allowGlobalContext: true
         }
       },
     }),
+    
     AuthModule,
     UserModule,
     CharacterModule,
@@ -62,7 +67,8 @@ import { SysConfigModule } from './config/sysConfig.module';
     UploadModule,
     SpeechModule,
     RecommendModule,
-    SysConfigModule
+    SysConfigModule,
+    ApiKeyPoolModule
   ],
   controllers: [AppController],
   providers: [AppService],
