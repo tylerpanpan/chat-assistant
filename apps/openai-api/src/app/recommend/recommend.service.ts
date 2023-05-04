@@ -10,25 +10,20 @@ import { User } from "../user/entities/user.entity";
 import { OpenAI } from "langchain/llms/openai";
 import { GPTModel } from "libs/openai-lib/src/enums/GPTModel";
 import { Character } from "../character/character.entity";
+import { ApiKeyPoolService } from "../apiKeyPool/apiKeyPool.service";
 
 @Injectable()
 export class RecommendService {
   openAiLib: OpenAILib
-  model: OpenAI
   constructor(
     @InjectRepository(UserCharacterKeywords)
     private userCharacterKeywordsRepo: EntityRepository<UserCharacterKeywords>,
     private em: EntityManager,
     private configService: ConfigService,
+    private apiKeyPoolService: ApiKeyPoolService,
   ) {
     this.openAiLib = new OpenAILib(configService.get('system.openAiKey'))
-    this.model = new OpenAI({
-      openAIApiKey: this.configService.get('system.openAiKey'),
-      modelName: GPTModel.GPT35TURBO0301,
-    }, {
-      basePath: this.configService.get('system.openAiBasePath'),
-      organization: this.configService.get('system.openAiOrgId')
-    })
+    
   }
 
 
@@ -41,10 +36,18 @@ export class RecommendService {
     if(!character){
       throw new Error('角色不存在')
     }
-   
+    const modelName = GPTModel.GPT35TURBO0301
+    const apiKeyPool = await this.apiKeyPoolService.getRandomAvailableApiKeyByVersion(modelName)
+    const model = new OpenAI({
+      openAIApiKey: apiKeyPool.apiKey,
+      modelName: modelName,
+    }, {
+      basePath: this.configService.get('system.openAiBasePath'),
+      organization: apiKeyPool.orgId
+    })
 
     if (text) {
-      const summarizeResponse = await this.model.call(summarize(text))
+      const summarizeResponse = await model.call(summarize(text))
       const keyword = summarizeResponse.replace(/。|\./g, '')
       if(!keywords.find(k => k.keyword === keyword)) {
         const saveKeyword = this.userCharacterKeywordsRepo.create({
@@ -55,15 +58,15 @@ export class RecommendService {
         })
         await this.em.persistAndFlush(saveKeyword)
         keywords.push(saveKeyword)
-        const res = character.recommendFocus ? await this.model.call(recommendQuestionByQuestion(text)) : await this.model.call(recommendQuestionByKeyWord([saveKeyword].map(keyword => keyword.keyword)))
+        const res = character.recommendFocus ? await model.call(recommendQuestionByQuestion(text)) : await model.call(recommendQuestionByKeyWord([saveKeyword].map(keyword => keyword.keyword)))
         return res;
       }
     } else {
       if(keywords.length < 0) {
-        const res = await this.model.call(recommendInitQuestion())
+        const res = await model.call(recommendInitQuestion())
         return res
       }else{
-        const res = await this.model.call(recommendQuestionByKeyWord(keywords.map(keyword => keyword.keyword)))
+        const res = await model.call(recommendQuestionByKeyWord(keywords.map(keyword => keyword.keyword)))
         keywords.forEach(keyword => {
           keyword.hitCount += 1
         })
