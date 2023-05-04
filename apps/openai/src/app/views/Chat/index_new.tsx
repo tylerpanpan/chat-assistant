@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import {
   Box,
   Stack,
@@ -12,7 +13,6 @@ import {
   ListItemIcon,
   ListItemText,
 } from "@mui/material";
-import { useEffect, useState } from "react";
 import { useQuery } from "react-query";
 import { useAuth } from "../../provider/AuthProvider";
 import useAPI from "../../hooks/useAPI";
@@ -21,7 +21,7 @@ import { RechargeModal } from "../../components/RechargeModal";
 import { ChatContent } from "./components/ChatContent";
 import { ChatList } from "./components/ChatList";
 import localForage from "localforage";
-import { getUrlParams } from "../../utils"
+import { useAudio } from "../../provider/AudioProvider";
 import MenuIcon from "@mui/icons-material/Menu";
 import MenuOpenIcon from "@mui/icons-material/MenuOpen";
 import SendIcon from "@mui/icons-material/Send";
@@ -30,12 +30,14 @@ import ViewHeadlineOutlinedIcon from '@mui/icons-material/ViewHeadlineOutlined';
 import SaveAsOutlinedIcon from '@mui/icons-material/SaveAsOutlined';
 import ShareOutlinedIcon from '@mui/icons-material/ShareOutlined';
 import MoreHorizOutlinedIcon from '@mui/icons-material/MoreHorizOutlined';
+import { getUrlParams } from "../../utils";
 import './index.scss';
 
 export function Chat() {
-  const { characterApi, chatApi, userApi, recommendApi } = useAPI();
+  const { chatApi, userApi, recommendApi } = useAPI();
   const { token, showLogin } = useAuth();
   const { showDialog, showToast } = useFeedback();
+  const { stop } = useAudio()
   const [characterId, setCharacterId] = useState<null | number>();
   const [curCharacter, setCurCharacter] = useState<any>();
   const [text, setText] = useState("");
@@ -43,7 +45,8 @@ export function Chat() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [rechargeModalOpen, setRechargeModalOpen] = useState(false);
   const [presetQuestions, setPresetQuestions] = useState<any[]>([]);
-  const [chat, setChat] = useState<any>()
+  const [chat, setChat] = useState<any>();
+  const [chats, setChats] = useState<{ role: "user" | "assistant" | "recharge" | "guest" | "gpt4limit"; content: string; loading?: boolean }[]>([]);
   const [showChatList, setShowChatList] = useState(false);
 
   // 更多操作
@@ -57,13 +60,33 @@ export function Chat() {
     setAnchorEl(null);
   };
 
-  // 获取url角色id
   useEffect(() => {
     const urlQuery = getUrlParams(location.href)
-    if (urlQuery.id) {
-      setCharacterId(urlQuery.id)
+    if (urlQuery.cid) {
+      setCharacterId(urlQuery.cid)
+    }
+    return () => {
+      stop()
     }
   }, [])
+
+  useEffect(() => {
+    // 停止语音
+    stop()
+    if (characterId) {
+      if (curCharacter?.recommendEnable) {
+        recommendQuestion(characterId)
+      }
+      localForage.getItem('character-chat').then((mapData: any) => {
+        mapData && localForage.getItem(mapData[characterId]).then((data: any) => {
+          if (data) {
+            const reverseData = [...data].reverse();
+            setChats(reverseData);
+          }
+        });
+      });
+    }
+  }, [characterId, curCharacter]);
 
   const { data: userInfo, refetch: refetchUserInfo } = useQuery(
     ["userinfo", token],
@@ -82,6 +105,7 @@ export function Chat() {
       refetchOnWindowFocus: false,
       onSuccess(data) {
         setChat(data)
+        setCurCharacter(data.character)
         localForage.getItem('character-chat').then((mapData: any) => {
           const characterChatMap = mapData || {}
           characterChatMap[`${characterId}`] = data.id
@@ -89,15 +113,6 @@ export function Chat() {
         })
         setPresetQuestions(data.character.presetQuestions || [])
       },
-    }
-  );
-
-  const { data: characters } = useQuery(
-    ["character", token],
-    () => characterApi.getCharacters(),
-    {
-      enabled: !!token,
-      refetchOnWindowFocus: false
     }
   );
 
@@ -115,6 +130,7 @@ export function Chat() {
     }
   );
 
+  // 获取推荐语
   const recommendQuestion = (_characterId: number, text?: string)=> {
     recommendApi.recommendQuestions(_characterId, text).then(res=> {
       if(typeof res === 'object') {
@@ -122,42 +138,6 @@ export function Chat() {
       }
     })
   }
-
-  useEffect(()=> {
-    const character = characters?.find((item: any)=> item.id === characterId)
-    if(character && character.recommendEnable) {
-      recommendQuestion(character.id)
-    }
-  }, [characterId, characters])
-
-  useEffect(() => {
-    if (characters) {
-      let _characterId: number;
-      if (!characterId) {
-        _characterId = characters[0].id;
-        setCharacterId(characters[0].id);
-        setCurCharacter(characters[0]);
-      } else {
-        _characterId = characterId;
-      }
-      localForage.getItem('character-chat').then((mapData: any) => {
-        mapData && localForage.getItem(mapData[_characterId]).then((data: any) => {
-          if (data) {
-            const reverseData = [...data].reverse();
-            setChats(reverseData);
-          }
-        });
-      });
-    }
-  }, [characters, characterId]);
-
-  const [chats, setChats] = useState<
-    { role: "user" | "assistant" | "recharge" | "guest" | "gpt4limit"; content: string; loading?: boolean }[]
-  >([]);
-
-  const currentCharacter = characters?.find(
-    (character: any) => character.id === characterId
-  );
 
   const handleSend = (question?: string) => {
     if (!text && !question) {
@@ -184,7 +164,7 @@ export function Chat() {
       }
     ]);
 
-    if(curCharacter && curCharacter.recommendEnable && (text || question || "").length >= 6) {
+    if(curCharacter && curCharacter?.recommendEnable && (text || question || "").length >= 6) {
       recommendQuestion(curCharacter.id, text || question)
     }
 
@@ -342,6 +322,7 @@ export function Chat() {
     if (!chat) return;
     showDialog("确定要清除会话吗?", "清除会话", "取消", "确定", (confirm) => {
       if (confirm == 1) {
+        stop()
         chatApi
           .clearMessage(chat.id)
           .then((res) => {
@@ -363,6 +344,7 @@ export function Chat() {
       .createChat(characterId)
       .then((res) => {
         showToast('新会话创建成功');
+        stop()
         setChats([])
         setChat(res)
         localForage.getItem('character-chat').then((mapData: any) => {
@@ -384,6 +366,7 @@ export function Chat() {
     chatApi
       .getCharacterChat(characterId)
       .then((res) => {
+        stop()
         if (res.length > 0) {
           setAllChats(res)
           setShowChatList(true);
@@ -472,10 +455,9 @@ export function Chat() {
                 <Box >
                   <Stack sx={{minHeight: '60px'}} direction="column" justifyContent="center" alignItems="center">
                     <Typography fontWeight="500">
-                      {currentCharacter?.name || ""}
+                      {curCharacter?.name || ""}
                     </Typography>
-                    {currentCharacter?.description && <Typography sx={{lineHeight: 1.2,marginTop: '5px'}} variant="caption">{currentCharacter?.description}</Typography>}
-
+                    {curCharacter?.description && <Typography sx={{lineHeight: 1.2,marginTop: '5px'}} variant="caption">{curCharacter?.description}</Typography>}
                   </Stack>
                 </Box>
                 <Box height="42px" flexShrink={0}>
@@ -527,17 +509,16 @@ export function Chat() {
             {/* 所有会话消息 */}
             {showChatList && <ChatList allChats={allChats} onChoose={handleChooseChat} onDelete={handleDeleteChat} />}
             {/* 当前会话内容 */}
-            {!showChatList && <ChatContent chats={chats} userInfo={userInfo} onRecharge={() => setRechargeModalOpen(true)} onShare={handleShare} />}
-
+            {!showChatList && <ChatContent character={curCharacter} chats={chats} userInfo={userInfo} onRecharge={() => setRechargeModalOpen(true)} onShare={handleShare} />}
+            {/* 推荐语及输入框 */}
             {!showChatList && <Box mx={2} my={1.5} position="relative">
-              {presetQuestions.length > 0 && !showChatList && characters?.find((item: any)=> item.id === characterId)?.recommendEnable && <Box pt={1} borderTop="1px solid #dedede">
+              {presetQuestions.length > 0 && !showChatList && curCharacter?.recommendEnable && <Box pt={1} borderTop="1px solid #dedede">
                 <Stack direction="row" sx={{
                   overflowY: 'auto',
                   flexFlow: {
                     sm: 'row wrap',
                     xs: 'row nowrap'
                   },
-
                 }}>
                   {
                     presetQuestions.map((question, index) => (

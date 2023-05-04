@@ -51,18 +51,18 @@ function BaseLayout () {
                     首页
                   </Typography>
                 </Box>
-                <Box onClick={() => jumpTo('/chat')} sx={{ cursor: 'pointer', color: "#555", '&:hover': { color: '#1976d2'} }}>
+                <Box onClick={() => jumpTo('/chatList')} sx={{ cursor: 'pointer', color: "#555", '&:hover': { color: '#1976d2'} }}>
                   <QuestionAnswerIcon />
                   <Typography variant="caption" display="block" mt={-1}>
                     对话
                   </Typography>
                 </Box>
-                <Box onClick={() => jumpTo('/community')} sx={{ cursor: 'pointer', color: "#555", '&:hover': { color: '#1976d2'} }}>
+                {/* <Box onClick={() => jumpTo('/community')} sx={{ cursor: 'pointer', color: "#555", '&:hover': { color: '#1976d2'} }}>
                   <PeopleIcon />
                   <Typography variant="caption" display="block" mt={-1}>
                     社区
                   </Typography>
-                </Box>
+                </Box> */}
                 <Box onClick={() => jumpTo('/my')} sx={{ cursor: 'pointer', color: "#555", '&:hover': { color: '#1976d2'} }}>
                   <PersonIcon />
                   <Typography variant="caption" display="block" mt={-1}>

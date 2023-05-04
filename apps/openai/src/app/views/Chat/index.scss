@@ -28,11 +28,10 @@
 	.code-block {
 		&-wrapper {
 			position: relative;
-            .code-block-body {
-                border-radius: 10px;
-            }
+      .code-block-body {
+        border-radius: 10px;
+      }
 		}
-
 	}
 
 	.katex {
@@ -91,4 +90,14 @@
 			}
 		}
 	}
+  .chat-audio-wrap {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    z-index: 1;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #fff;
+  }
 }

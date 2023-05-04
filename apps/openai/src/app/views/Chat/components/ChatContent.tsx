@@ -1,15 +1,16 @@
-import { Box, Skeleton, Stack, Typography } from "@mui/material"
+import { Box, IconButton, Skeleton, Stack, Typography } from "@mui/material"
 import { useEffect, useRef, useState } from "react";
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useFeedback } from "../../../components/Feedback";
 import { useAuth } from "../../../provider/AuthProvider";
+import { useAudio } from "../../../provider/AudioProvider";
+import HeadphonesIcon from '@mui/icons-material/Headphones';
 import MarkdownIt from "markdown-it";
 import mdKatex from "@traptitech/markdown-it-katex";
 import mila from "markdown-it-link-attributes";
 import hljs from "highlight.js";
 import "katex/dist/katex.css";
 import "highlight.js/styles/atom-one-dark.css";
-import { useAudio } from "../../../provider/AudioProvider";
 
 interface ChatContentProps {
   chats: any[];
@@ -49,7 +50,7 @@ export function ChatContent({
 	const { showLogin } = useAuth();
 	const chatEndRef = useRef<HTMLDivElement>(null);
 	const { tts, append } = useAudio();
-	
+
 	// 虚拟滚动相关
 	const count = chats.length
 	const virtualizer = useVirtualizer({
@@ -153,13 +154,21 @@ export function ChatContent({
 										letterSpacing={"1.2px"}
 										position={'relative'}
 									>
+                    {
+                      chats[virtualRow.index].role === "assistant" && character?.isAudioOutput && (
+                        <Box className="chat-audio-wrap">
+                          <IconButton onClick={ handlePlay(virtualRow.index)} size="small">
+                            <HeadphonesIcon sx={{ color: '#1976d2', fontSize: '16px' }} />
+                          </IconButton>
+                        </Box>
+                      )
+                    }
 										{chats[virtualRow.index].role === "assistant" && (
 											<Box
 												className="chat-actions"
 											>
 												<Typography variant="caption" className="action-btn" onClick={() => copyText(chats[virtualRow.index])}>复制</Typography>
 												{/* <Typography variant="caption" className="action-btn" onClick={() => handleDeleteChat(chats[virtualRow.index])}>删除</Typography> */}
-												{character?.isAudioOutput && <Typography variant="caption" className="action-btn" onClick={ handlePlay(virtualRow.index)}>播放</Typography>}
 											</Box>
 										)}
 										{chats[virtualRow.index].loading ? (

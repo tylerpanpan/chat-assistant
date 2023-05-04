@@ -1,19 +1,24 @@
 import { useEffect, useState } from "react";
-import { Avatar, Box, Button, Divider, Stack, Typography } from "@mui/material"
+import { Avatar, Box, Button, Divider, IconButton, Stack, Typography } from "@mui/material"
 import { useQuery } from "react-query";
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from "../../provider/AuthProvider";
 import useAPI from "../../hooks/useAPI";
-import { getUrlParams } from "../../utils"
+import { getUrlParams } from "../../utils";
+import { useFeedback } from "../../components/Feedback";
 import { CreateCharacterModal } from "../../components/CreateCharacterModal";
 import localForage from "localforage";
 import AddCircleOutlineSharpIcon from '@mui/icons-material/AddCircleOutlineSharp';
+import BorderColorIcon from '@mui/icons-material/BorderColor';
+import DeleteIcon from "@mui/icons-material/Delete";
 
 function Home() {
   const navigate = useNavigate()
   const { characterApi, userApi } = useAPI();
   const { token, showLogin, login } = useAuth();
+  const { showDialog, showToast } = useFeedback();
   const [showCreateCharacterModal, setShowCreateCharacterModal] = useState(false);
+  const [curCharacter, setCurCharacter] = useState<any>();
 
   // 判断是否是游客，新用户
   useEffect(() => {
@@ -59,7 +64,7 @@ function Home() {
   );
 
   const goChat = (value: any) => {
-    navigate(`/chat?id=${value.id}`)
+    navigate(`/chat?cid=${value.id}`)
   }
 
   const handleCharacterCreated = () => {
@@ -73,6 +78,27 @@ function Home() {
       return;
     }
     setShowCreateCharacterModal(true);
+  }
+
+  const handleEditCharacter = (event: any, data: any) => {
+    event.stopPropagation();
+    setCurCharacter(data);
+    setShowCreateCharacterModal(true);
+  }
+
+  const handleDeleteCharacter = (event: any, id: number) => {
+    event.stopPropagation();
+    showDialog("确定要删除该角色吗?", "删除角色", "取消", "确定", (confirm) => {
+      if (confirm == 1) {
+        characterApi
+          .deleteCharacter(`${id}`)
+          .then(() => {
+            showToast('删除成功');
+            refetchCharacter();
+          })
+          .catch((err) => {});
+      }
+    });
   }
 
   return (
@@ -102,7 +128,7 @@ function Home() {
             characters?.map((item: any) => (
               <Box
                 key={item.id}
-                border="1px solid #dedede"
+                bgcolor="#f3f0f0"
                 borderRadius="10px"
                 sx={{
                   width: "180px",
@@ -112,7 +138,10 @@ function Home() {
                   alignItems: "center",
                   padding: "12px",
                   flex: "0 0 auto",
-                  cursor: "pointer"
+                  cursor: "pointer",
+                  '&:hover': {
+                    backgroundColor: '#dedede'
+                  }
                 }}
                 onClick={() => goChat(item)}
               >
@@ -143,13 +172,27 @@ function Home() {
                 </Box>
                 <Box
                   sx={{
-                    marginTop: "15px",
+                    marginTop: "10px",
                     width: "100%",
                   }}
                 >
-                  <Stack direction="row" justifyContent="space-between" alignItems="center">
-                    <Typography variant="body1" sx={{ fontSize: "12px", color: "#666" }}>{item.isDefault ? "@系统" : "@我"}</Typography>
-                    <Typography variant="body1" sx={{ fontSize: "12px", color: "#303030" }}>使用条数：2.3万条</Typography>
+                  <Stack direction="row" justifyContent="space-between" alignItems="center" height="22px">
+                    <Typography variant="body1" sx={{ fontSize: "12px", color: "#303030" }}>使用数：2.3万</Typography>
+                    <Typography variant="body1" sx={{ fontSize: "12px", color: "#666" }}>
+                      {item.isDefault
+                        ? "@系统"
+                        : (
+                          <Stack direction="row" alignItems="center">
+                            <IconButton onClick={(event) => handleEditCharacter(event, item)} size="small">
+                              <BorderColorIcon sx={{ color: '#1976d2', fontSize: '10px' }} />
+                            </IconButton>
+                            <IconButton onClick={(event) => handleDeleteCharacter(event, item.id)} size="small">
+                              <DeleteIcon sx={{ color: '#1976d2', fontSize: '12px', marginLeft: "2px" }} />
+                            </IconButton>
+                          </Stack>
+                        )
+                      }
+                    </Typography>
                   </Stack>
                 </Box>
               </Box>
@@ -188,39 +231,48 @@ function Home() {
                     </Stack>
                   </Box>
                   <Box
+                    bgcolor="#f3f0f0"
                     sx={{
                       height: '48px',
-                      background: "#f1f2f3",
                       borderRadius: '6px',
                       padding: '5px',
                       fontSize: '14px',
                       lineHeight: 1.4,
                       color: "#303030",
-                      cursor: "pointer"
+                      cursor: "pointer",
+                      '&:hover': {
+                        backgroundColor: '#dedede'
+                      }
                     }}
                   >帮助我为一款新的电子游戏创建广告宣传话，500字左右</Box>
                   <Box
+                    bgcolor="#f3f0f0"
                     sx={{
                       height: '48px',
-                      background: "#f1f2f3",
                       borderRadius: '6px',
                       padding: '5px',
                       fontSize: '14px',
                       lineHeight: 1.4,
                       color: "#303030",
-                      cursor: "pointer"
+                      cursor: "pointer",
+                      '&:hover': {
+                        backgroundColor: '#dedede'
+                      }
                     }}
                   >帮助我为一款新的电子游戏创建广告宣传话，500字左右</Box>
                   <Box
+                    bgcolor="#f3f0f0"
                     sx={{
                       height: '48px',
-                      background: "#f1f2f3",
                       borderRadius: '6px',
                       padding: '5px',
                       fontSize: '14px',
                       lineHeight: 1.4,
                       color: "#303030",
-                      cursor: "pointer"
+                      cursor: "pointer",
+                      '&:hover': {
+                        backgroundColor: '#dedede'
+                      }
                     }}
                   >帮助我为一款新的电子游戏创建广告宣传话，500字左右</Box>
                 </Stack>
@@ -232,8 +284,12 @@ function Home() {
       {/* 创建角色 */}
       <CreateCharacterModal
         open={showCreateCharacterModal}
+        character={curCharacter}
         onCreated={handleCharacterCreated}
-        onClose={() => setShowCreateCharacterModal(false)}
+        onClose={() => {
+          setShowCreateCharacterModal(false)
+          setCurCharacter(null)
+        }}
       />
     </Box>
   )
