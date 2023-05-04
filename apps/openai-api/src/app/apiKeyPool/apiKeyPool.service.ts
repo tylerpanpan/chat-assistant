@@ -50,7 +50,7 @@ export class ApiKeyPoolService {
     });
   }
 
-  @Cron(CronExpression.EVERY_MINUTE)
+  @Cron(CronExpression.EVERY_2_HOURS)
   async handleCron() {
     const list = await this.apiKeyPoolRepository.find({})
     const getUsageUrl = this.configService.get('system.openAiBasePath') + '/dashboard/billing/usage'
