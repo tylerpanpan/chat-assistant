@@ -146,12 +146,12 @@ export function CreateCharacterModal({
               onChange={(_, value) => {
                 formik.setFieldValue("temperature", value)
               }}
-              min={0}
-              max={2}
+              min={0.5}
+              max={1.5}
               step={0.1}
               marks={[
                 {
-                  value: 0,
+                  value: 0.5,
                   label: '低',
                   
                 },
@@ -160,7 +160,7 @@ export function CreateCharacterModal({
                   label: '中',
                 },
                 {
-                  value: 2,
+                  value: 1.5,
                   label: '高',
                 }, 
               ]}
@@ -181,12 +181,12 @@ export function CreateCharacterModal({
               onChange={(_, value) => {
                 formik.setFieldValue("frequencyPenalty", value)
               }}
-              min={-2}
-              max={2}
+              min={-0.3}
+              max={0.3}
               step={0.1}
               marks={[
                 {
-                  value: -2,
+                  value: -0.3,
                   label: '低',
                 },
                 {
@@ -194,7 +194,7 @@ export function CreateCharacterModal({
                   label: '中',
                 },
                 {
-                  value: 2,
+                  value: 0.3,
                   label: '高',
                 }, 
               ]}
