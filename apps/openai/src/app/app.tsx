@@ -1,28 +1,14 @@
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import styles from './app.module.scss';
 import { QueryClientProvider, QueryClient } from 'react-query';
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { RouterProvider } from 'react-router-dom';
 import { CssBaseline } from '@mui/material';
-import Chat from './views/Chat';
+import router from './router';
 import { AuthProvider } from './provider/AuthProvider';
 import FeedbackProvider from './components/Feedback';
 import { AudioProvider } from './provider/AudioProvider';
+import './app.module.scss';
 
-export function App() {
+function App() {
   const client = new QueryClient();
-
-  const router = createBrowserRouter([
-    {
-      path: '/',
-      children: [
-        {
-          index: true,
-          path: '',
-          element: <Chat />,
-        },
-      ],
-    }
-  ]);
 
   return (
     <>
