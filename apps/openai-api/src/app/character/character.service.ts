@@ -83,14 +83,19 @@ export class CharacterService {
   async getRecentUsedCharacters(user: User, limit: number = 10) {
     // get recent used characters, order by last used, using querybuild
     const characters = await this.em.getConnection().execute(`
-    SELECT c.* FROM chat ch
-    INNER JOIN \`character\` c ON ch.character_id = c.id
-    WHERE ch.user_id = ?
-    GROUP BY ch.character_id
-    ORDER BY ch.updated_at DESC
-    LIMIT ?
+    SELECT c.*
+    FROM \`character\` c
+    INNER JOIN (
+      SELECT ch.character_id, MAX(ch.updated_at) AS updated_at
+      FROM chat ch
+      WHERE ch.user_id = ?
+      GROUP BY ch.character_id
+    ) latest_chat ON c.id = latest_chat.character_id
+    ORDER BY latest_chat.updated_at DESC LIMIT ?;
   `, [user.id, limit])
 
-    return characters.map(c=> this.characterRepository.merge(c))
+    return Promise.all(characters.map(async (character) => {
+      return  this.characterRepository.findOne(character.id, { populate: ['user'] });
+    }))
   }
 }
