@@ -1,4 +1,5 @@
-import { EntityRepository } from "@mikro-orm/core";
+import { EntityRepository, LoadStrategy, MikroORM } from "@mikro-orm/core";
+import { EntityManager } from '@mikro-orm/mysql'
 import { InjectRepository } from "@mikro-orm/nestjs";
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { User } from "../user/entities/user.entity";
@@ -6,6 +7,7 @@ import { Character } from "./character.entity";
 import { CreateCharacterDto } from "./dto/create.dto";
 import { UpdateCharacterDto } from "./dto/update.dto";
 import { Role } from "../role/role.decorator";
+import { Chat } from "../chat/entities/chat.entity";
 
 @Injectable()
 export class CharacterService {
@@ -13,6 +15,8 @@ export class CharacterService {
   constructor(
     @InjectRepository(Character)
     private characterRepository: EntityRepository<Character>,
+    private em: EntityManager,
+    private orm: MikroORM
   ) { }
 
   async getCharacters(user: User) {
@@ -41,7 +45,7 @@ export class CharacterService {
     character.model = dto.model;
     character.temperature = dto.temperature;
     character.frequencyPenalty = dto.frequencyPenalty;
-    
+
     await this.characterRepository.persistAndFlush(character)
 
     return character;
@@ -76,4 +80,17 @@ export class CharacterService {
     return character
   }
 
+  async getRecentUsedCharacters(user: User, limit: number = 10) {
+    // get recent used characters, order by last used, using querybuild
+    const characters = await this.em.getConnection().execute(`
+    SELECT c.* FROM chat ch
+    INNER JOIN \`character\` c ON ch.character_id = c.id
+    WHERE ch.user_id = ?
+    GROUP BY ch.character_id
+    ORDER BY ch.updated_at DESC
+    LIMIT ?
+  `, [user.id, limit])
+
+    return characters.map(c=> this.characterRepository.merge(c))
+  }
 }
