@@ -17,7 +17,7 @@ interface ChatContentProps {
   userInfo: any;
 	character?: any;
 	onRecharge: () => void;
-  onShare: () => void;
+  onShare?: () => void;
 }
 
 function highlightBlock(str: string, lang?: string) {

@@ -1,11 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Box,
   Stack,
   IconButton,
-  InputBase,
-  CircularProgress,
-  Button,
   Typography,
   Tooltip,
   Menu,
@@ -20,11 +17,9 @@ import { useFeedback } from "../../components/Feedback";
 import { RechargeModal } from "../../components/RechargeModal";
 import { ChatContent } from "./components/ChatContent";
 import { ChatList } from "./components/ChatList";
+import ChatInsert from "./components/ChatInsert";
 import localForage from "localforage";
 import { useAudio } from "../../provider/AudioProvider";
-import MenuIcon from "@mui/icons-material/Menu";
-import MenuOpenIcon from "@mui/icons-material/MenuOpen";
-import SendIcon from "@mui/icons-material/Send";
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import ViewHeadlineOutlinedIcon from '@mui/icons-material/ViewHeadlineOutlined';
 import SaveAsOutlinedIcon from '@mui/icons-material/SaveAsOutlined';
@@ -38,11 +33,10 @@ export function Chat() {
   const { token, showLogin } = useAuth();
   const { showDialog, showToast } = useFeedback();
   const { stop } = useAudio()
+  const sendRef = useRef()
   const [characterId, setCharacterId] = useState<null | number>();
   const [curCharacter, setCurCharacter] = useState<any>();
-  const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
   const [rechargeModalOpen, setRechargeModalOpen] = useState(false);
   const [presetQuestions, setPresetQuestions] = useState<any[]>([]);
   const [chat, setChat] = useState<any>();
@@ -126,6 +120,12 @@ export function Chat() {
         localForage.setItem(`${chat?.id}`, data)
         const reverseData = [...data].reverse()
         setChats(reverseData)
+        localForage.getItem('once-text').then((data: any) => {
+          if (data) {
+            handleSend(data)
+            localForage.removeItem('once-text')
+          }
+        })
       },
     }
   );
@@ -139,8 +139,8 @@ export function Chat() {
     })
   }
 
-  const handleSend = (question?: string) => {
-    if (!text && !question) {
+  const handleSend = (text?: string) => {
+    if (!text) {
       return;
     }
     if (!token) {
@@ -155,7 +155,7 @@ export function Chat() {
       ...chats,
       {
         role: "user",
-        content: question || text,
+        content: text,
       },
       {
         role: "assistant",
@@ -164,12 +164,12 @@ export function Chat() {
       }
     ]);
 
-    if(curCharacter && curCharacter?.recommendEnable && (text || question || "").length >= 6) {
-      recommendQuestion(curCharacter.id, text || question)
+    if(curCharacter && curCharacter?.recommendEnable && (text || "").length >= 6) {
+      recommendQuestion(curCharacter.id, text)
     }
 
     chatApi
-      .chat(chat.id, question || text, true)
+      .chat(chat.id, text, true)
       .then((response: any) => {
         const reader = response.body.getReader();
         if (response.status === 402) {
@@ -251,11 +251,12 @@ export function Chat() {
             ...chats,
             {
               role: "user",
-              content: question || text,
+              content: text,
             },
             { role: "assistant", content: streamText }
           ]);
-          setText("");
+          // @ts-ignore
+          sendRef.current && sendRef.current.clearText()
           // 递归读取下一个文本块
           return textStream.read().then(processText);
         });
@@ -301,12 +302,6 @@ export function Chat() {
           showToast('现在业务繁忙，请稍后再试')
         }
       });
-  };
-
-  const handleKeyDown = (e: any) => {
-    if (e.keyCode === 13) {
-      handleSend();
-    }
   };
 
   const handleShare = () => {
@@ -403,6 +398,12 @@ export function Chat() {
     if (chat?.id !== chatData.id) {
       setChats([])
       setChat(chatData)
+      localForage.getItem(`${chatData.id}`).then((data: any) => {
+        if (data) {
+          const reverseData = [...data].reverse();
+          setChats(reverseData);
+        }
+      })
     }
     localForage.getItem('character-chat').then((mapData: any) => {
       const characterChatMap = mapData || {}
@@ -440,19 +441,13 @@ export function Chat() {
                 justifyContent="space-between"
                 alignItems="center"
               >
-                <Box minWidth="44px">
-                  <IconButton
-                    sx={{ display: { sm: "none", xs: "inline-flex" } }}
-                    onClick={() => setMobileOpen(!mobileOpen)}
-                  >
-                    {mobileOpen ? (
-                      <MenuOpenIcon htmlColor="#303030" />
-                    ) : (
-                      <MenuIcon htmlColor="#303030" />
-                    )}
-                  </IconButton>
-                </Box>
-                <Box >
+                {userInfo?.username && <Box flexShrink={0} marginRight="5px" sx={{ marginLeft: { xs: 0, sm: "10px" } }}>
+                  <Typography variant="caption" display="block">积分：{Math.floor(userInfo?.balance ? userInfo?.balance * 100 : 0)}</Typography>
+                  <Typography variant="caption" display="block" sx={{ fontSize: '13px', fontWeight: '500', color: '#1976d2', cursor: 'pointer' }} onClick={()=> setRechargeModalOpen(true)}>
+                    充值
+                  </Typography>
+                </Box>}
+                <Box>
                   <Stack sx={{minHeight: '60px'}} direction="column" justifyContent="center" alignItems="center">
                     <Typography fontWeight="500">
                       {curCharacter?.name || ""}
@@ -511,59 +506,7 @@ export function Chat() {
             {/* 当前会话内容 */}
             {!showChatList && <ChatContent character={curCharacter} chats={chats} userInfo={userInfo} onRecharge={() => setRechargeModalOpen(true)} onShare={handleShare} />}
             {/* 推荐语及输入框 */}
-            {!showChatList && <Box mx={2} my={1.5} position="relative">
-              {presetQuestions.length > 0 && !showChatList && curCharacter?.recommendEnable && <Box pt={1} borderTop="1px solid #dedede">
-                <Stack direction="row" sx={{
-                  overflowY: 'auto',
-                  flexFlow: {
-                    sm: 'row wrap',
-                    xs: 'row nowrap'
-                  },
-                }}>
-                  {
-                    presetQuestions.map((question, index) => (
-                      <Button key={index} variant="outlined" size="small" sx={{whiteSpace: 'nowrap',flexShrink: 0, marginRight: '10px', marginBottom: '8px'}} onClick={() => handleSend(question)}>{question}</Button>
-                    ))
-                  }
-                </Stack>
-              </Box>}
-              <Stack direction="row">
-                <InputBase
-                  value={text}
-                  onChange={(e) => setText(e.target.value)}
-                  style={{
-                    border: '1px solid #dedede',
-                    borderRadius: '10px',
-                    color: "#303030",
-                    width: '100%',
-                    height: '100%',
-                    boxShadow: '0 -2px 5px rgba(0,0,0,.03)',
-                    padding: '10px 100px 10px 14px',
-                    resize: 'none',
-                    outline: 'none'
-                  }}
-                  maxRows={4}
-                  minRows={3}
-                  multiline
-                  fullWidth
-                  disabled={sending}
-                  placeholder="请输入内容，Enter发送"
-                  onKeyDown={handleKeyDown}
-                />
-                <Box
-                  position="absolute"
-                  right="10px"
-                  bottom="10px"
-                >
-                  <Button
-                    variant="contained"
-                    onClick={() => handleSend()}
-                    disabled={!text || sending}
-                    startIcon={sending ? <CircularProgress size="16px" /> : <SendIcon />}
-                  >发送</Button>
-                </Box>
-              </Stack>
-            </Box>}
+            {!showChatList && <ChatInsert ref={sendRef} presetQuestions={presetQuestions} sending={sending} curCharacter={curCharacter} handleSend={handleSend} />}
           </Stack>
         </Box>
         <RechargeModal open={rechargeModalOpen} onClose={()=> setRechargeModalOpen(false)}/>

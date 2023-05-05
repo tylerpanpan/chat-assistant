@@ -136,6 +136,10 @@ export class CharacterAPI extends BaseAPI {
     return this.delete<any>(`/api/character/${id}`, {})
   }
 
+  getRecentCharacter(count: number) {
+    return this.get<any>('/api/character/recent_used', { count })
+  }
+
 }
 
 export class ChatAPI extends BaseAPI {
@@ -191,7 +195,7 @@ export class OrderAPI extends BaseAPI {
 
 export class SpeechAPI extends BaseAPI {
 
-  
+
 }
 
 export class RecommendAPI extends BaseAPI {

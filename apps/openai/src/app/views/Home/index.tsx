@@ -11,6 +11,14 @@ import localForage from "localforage";
 import AddCircleOutlineSharpIcon from '@mui/icons-material/AddCircleOutlineSharp';
 import BorderColorIcon from '@mui/icons-material/BorderColor';
 import DeleteIcon from "@mui/icons-material/Delete";
+import a1 from '../../avatar/1.jpeg'
+import a2 from '../../avatar/2.jpeg'
+import a3 from '../../avatar/3.jpeg'
+import a4 from '../../avatar/4.jpeg'
+import a5 from '../../avatar/5.jpeg'
+import a6 from '../../avatar/6.jpeg'
+import a7 from '../../avatar/7.jpeg'
+import a8 from '../../avatar/8.jpeg'
 
 function Home() {
   const navigate = useNavigate()
@@ -19,6 +27,21 @@ function Home() {
   const { showDialog, showToast } = useFeedback();
   const [showCreateCharacterModal, setShowCreateCharacterModal] = useState(false);
   const [curCharacter, setCurCharacter] = useState<any>();
+
+  const getImg = (id: string) => {
+    const imgMap: any = {
+      21: a1,
+      97: a2,
+      55: a3,
+      58: a4,
+      59: a5,
+      87: a6,
+      93: a7,
+      101: a8,
+    }
+
+    return imgMap[id] || null;
+  }
 
   // 判断是否是游客，新用户
   useEffect(() => {
@@ -101,6 +124,12 @@ function Home() {
     });
   }
 
+  const goChatWithText = (value: any, text: string) => {
+    localForage.setItem('once-text', text).then(() => {
+      navigate(`/chat?cid=${value.id}`)
+    })
+  }
+
   return (
     <Box
       className="home-container"
@@ -146,7 +175,7 @@ function Home() {
                 onClick={() => goChat(item)}
               >
                 <Box>
-                  <Avatar src={item.avatar} variant="square" sx={{ width: 108, height: 108, borderRadius: "10px" }}></Avatar>
+                  <Avatar src={getImg(item.id)} variant="square" sx={{ width: 108, height: 108, borderRadius: "10px" }}></Avatar>
                 </Box>
                 <Box
                   sx={{
@@ -222,7 +251,7 @@ function Home() {
                   <Box>
                     <Stack direction="row">
                       <Box>
-                        <Avatar src={item.avatar} variant="square" sx={{ width: 48, height: 48, borderRadius: "6px" }}></Avatar>
+                        <Avatar src={getImg(item.id)} variant="square" sx={{ width: 48, height: 48, borderRadius: "6px" }}></Avatar>
                       </Box>
                       <Box marginLeft="10px">
                         <Typography variant="body1" sx={{ fontSize: "14px", color: "#303030" }}>{item.name}</Typography>
@@ -230,51 +259,27 @@ function Home() {
                       </Box>
                     </Stack>
                   </Box>
-                  <Box
-                    bgcolor="#f3f0f0"
-                    sx={{
-                      height: '48px',
-                      borderRadius: '6px',
-                      padding: '5px',
-                      fontSize: '14px',
-                      lineHeight: 1.4,
-                      color: "#303030",
-                      cursor: "pointer",
-                      '&:hover': {
-                        backgroundColor: '#dedede'
-                      }
-                    }}
-                  >帮助我为一款新的电子游戏创建广告宣传话，500字左右</Box>
-                  <Box
-                    bgcolor="#f3f0f0"
-                    sx={{
-                      height: '48px',
-                      borderRadius: '6px',
-                      padding: '5px',
-                      fontSize: '14px',
-                      lineHeight: 1.4,
-                      color: "#303030",
-                      cursor: "pointer",
-                      '&:hover': {
-                        backgroundColor: '#dedede'
-                      }
-                    }}
-                  >帮助我为一款新的电子游戏创建广告宣传话，500字左右</Box>
-                  <Box
-                    bgcolor="#f3f0f0"
-                    sx={{
-                      height: '48px',
-                      borderRadius: '6px',
-                      padding: '5px',
-                      fontSize: '14px',
-                      lineHeight: 1.4,
-                      color: "#303030",
-                      cursor: "pointer",
-                      '&:hover': {
-                        backgroundColor: '#dedede'
-                      }
-                    }}
-                  >帮助我为一款新的电子游戏创建广告宣传话，500字左右</Box>
+                  {
+                    item.presetQuestions?.map((question: any, index: number) => (
+                      <Box
+                        key={index}
+                        bgcolor="#f3f0f0"
+                        sx={{
+                          height: '48px',
+                          borderRadius: '6px',
+                          padding: '5px',
+                          fontSize: '14px',
+                          lineHeight: 1.4,
+                          color: "#303030",
+                          cursor: "pointer",
+                          '&:hover': {
+                            backgroundColor: '#dedede'
+                          }
+                        }}
+                        onClick={() => goChatWithText(item, question)}
+                      >{question}</Box>
+                    ))
+                  }
                 </Stack>
               </Box>
             ))
