@@ -87,17 +87,30 @@ export function ChatContent({
 	const [currentPlayIndex, setCurrentPlayIndex] = useState<number | null>(null);
 	const [playedText, setPlayedText] = useState<string | null>(null);
 	const handlePlay = (index: number) => () => {
-		const text = chats[index].content;
+		const text = chats[index].content as string;
+		const sentences = text.match(/[^.!?。！？]+[.!?。！？]/g);
+		if(!sentences) return;
+
+		const _text = sentences.join('');
 		setCurrentPlayIndex(index)
-		setPlayedText(text)
-		tts(text)
+		setPlayedText(_text)
+		tts(_text)
 	}
 
 	useEffect(()=> {
 		if(currentPlayIndex && playedText && chats[currentPlayIndex]?.content !== playedText && character?.isAudioOutput) {
 			const appendData = chats[currentPlayIndex]?.content.replace(playedText, '')
-			setPlayedText(chats[currentPlayIndex]?.content)
-			append(appendData)
+			if(appendData.length > 50) {
+				const sentences = appendData.match(/[^.!?。！？]+[.!?。！？]/g);
+				let _text = '';
+				if(!sentences) {
+					_text= appendData;
+				} else{
+					_text = sentences.join('');
+				}
+				setPlayedText(playedText + _text)
+				append(_text)
+			}
 		}
 	},[chats, currentPlayIndex, playedText]);
 
