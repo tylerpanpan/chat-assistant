@@ -15,6 +15,13 @@ export class UploadController {
     private uploadService: UploadService,
   ) {}
 
+  @Post('/oss_signature')
+  async ossSignature(
+    @Req() { user }
+  ) {
+    return this.uploadService.ossSignature(user);
+  }
+
   @Post()
   @UseInterceptors(FileInterceptor('file'))
   async upload(
