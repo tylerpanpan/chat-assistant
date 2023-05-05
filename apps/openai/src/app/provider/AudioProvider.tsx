@@ -114,20 +114,20 @@ export const AudioProvider = ({ children }: { children: any }) => {
 
   /*
    * split text into sentences
-   * if sentence is less than 10 characters, combine it with next sentence
+   * if sentence is less 20 chars, merge it with the next sentence
    */
   const splitText = (text: string) => {
-    let sentences = text.split(/(?<=[。！？?!.])/g);
-    let newSentences = [];
+    const sentences = text.match(/[^.!?。！？]+[.!?。！？]/g);
+    if (!sentences) {
+      return [text];
+    }
     for (let i = 0; i < sentences.length; i++) {
-      if (sentences[i].length < 10) {
-        newSentences.push(sentences[i] + (sentences[i + 1] || ""));
-        i++;
-      } else {
-        newSentences.push(sentences[i]);
+      if (sentences[i].length < 20) {
+        sentences[i + 1] = sentences[i] + sentences[i + 1];
+        sentences.splice(i, 1);
+        i--;
       }
     }
-    sentences = newSentences;
     return sentences;
   };
 

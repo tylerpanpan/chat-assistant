@@ -17,6 +17,7 @@ import { SysConfigService } from "../config/sysConfig.service";
 import { ModelUsage } from "./entities/model-usage.entity";
 import moment from "moment";
 import { AIChatMessage, SystemChatMessage, HumanChatMessage } from "langchain/schema";
+import { ApiKeyPoolService } from "../apiKeyPool/apiKeyPool.service";
 
 
 @Injectable()
@@ -33,6 +34,7 @@ export class ChatService {
     private em: EntityManager,
     private configService: ConfigService,
     private sysConfigService: SysConfigService,
+    private apiKeyPoolService: ApiKeyPoolService,
   ) {
     this.openaiLib = new OpenAILib(configService.get('system.openAiKey'), configService.get('system.openAiBasePath'));
   }
@@ -110,7 +112,6 @@ export class ChatService {
   async chat(chatId: number, user: User, text: string, stream: boolean = false, handleNewToken?: (msg: string) => void) {
     const userRepo = this.em.getRepository(User);
     const u = await userRepo.findOne({ id: user.id })
-
     const guestMessageLimit = await this.sysConfigService.getConfigByKey('system.guestMessageLimit')
     
     const time = moment().format('YYYY-MM-DD HH:mm')
@@ -176,11 +177,12 @@ export class ChatService {
     // });
 
     let totalTokens = 0
-
+    const modelName = chat.character.model || GPTModel.GPT35TURBO0301
+    const apiKeyPool = await this.apiKeyPoolService.getRandomAvailableApiKeyByVersion(modelName)
     const chatModel = new ChatOpenAI({
-      openAIApiKey: this.configService.get('system.openAiKey'),
+      openAIApiKey: apiKeyPool.apiKey,
       streaming: stream,
-      modelName: chat.character.model || GPTModel.GPT35TURBO0301,
+      modelName: modelName,
       temperature: chat.character.temperature || 1,
       frequencyPenalty: chat.character.frequencyPenalty || 0,
       callbackManager: CallbackManager.fromHandlers({
@@ -197,7 +199,7 @@ export class ChatService {
       })
     }, { 
       basePath: this.configService.get('system.openAiBasePath'),
-      organization: this.configService.get('system.openAiOrgId')
+      organization: apiKeyPool.orgId,
     })
 
     const {text: response} = await chatModel.call([ new SystemChatMessage(chat.character.definition),...messages, new HumanChatMessage(text)])
