@@ -100,7 +100,7 @@ export function ChatContent({
 	useEffect(()=> {
 		if(currentPlayIndex && playedText && chats[currentPlayIndex]?.content !== playedText && character?.isAudioOutput) {
 			const appendData = chats[currentPlayIndex]?.content.replace(playedText, '')
-			if(appendData.length > 50) {
+			if(appendData && appendData.length > 50) {
 				const sentences = appendData.match(/[^.!?。！？]+[.!?。！？]/g);
 				let _text = '';
 				if(!sentences) {
