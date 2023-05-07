@@ -41,7 +41,7 @@ const ChatInsert = ({
           }}>
             {
               presetQuestions.map((question, index) => (
-                <Button key={index} variant="outlined" size="small" sx={{whiteSpace: 'nowrap',flexShrink: 0, marginRight: '10px', marginBottom: '8px'}} onClick={() => handleSend(question)}>{question}</Button>
+                <Button key={index} variant="outlined" size="small" sx={{whiteSpace: 'nowrap',flexShrink: 0, marginRight: '10px', marginBottom: '8px', textTransform: 'none'}} onClick={() => handleSend(question)}>{question}</Button>
               ))
             }
           </Stack>

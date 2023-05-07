@@ -11,14 +11,6 @@ import localForage from "localforage";
 import AddCircleOutlineSharpIcon from '@mui/icons-material/AddCircleOutlineSharp';
 import BorderColorIcon from '@mui/icons-material/BorderColor';
 import DeleteIcon from "@mui/icons-material/Delete";
-import a1 from '../../avatar/1.jpeg'
-import a2 from '../../avatar/2.jpeg'
-import a3 from '../../avatar/3.jpeg'
-import a4 from '../../avatar/4.jpeg'
-import a5 from '../../avatar/5.jpeg'
-import a6 from '../../avatar/6.jpeg'
-import a7 from '../../avatar/7.jpeg'
-import a8 from '../../avatar/8.jpeg'
 
 function Home() {
   const navigate = useNavigate()
@@ -27,21 +19,6 @@ function Home() {
   const { showDialog, showToast } = useFeedback();
   const [showCreateCharacterModal, setShowCreateCharacterModal] = useState(false);
   const [curCharacter, setCurCharacter] = useState<any>();
-
-  const getImg = (id: string) => {
-    const imgMap: any = {
-      21: a1,
-      97: a2,
-      55: a3,
-      58: a4,
-      59: a5,
-      87: a6,
-      93: a7,
-      101: a8,
-    }
-
-    return imgMap[id] || null;
-  }
 
   // 判断是否是游客，新用户
   useEffect(() => {
@@ -175,7 +152,7 @@ function Home() {
                 onClick={() => goChat(item)}
               >
                 <Box>
-                  <Avatar src={getImg(item.id)} variant="square" sx={{ width: 108, height: 108, borderRadius: "10px" }}></Avatar>
+                  <Avatar src={item.avatar} variant="square" sx={{ width: 108, height: 108, borderRadius: "10px" }}></Avatar>
                 </Box>
                 <Box
                   sx={{
@@ -206,7 +183,7 @@ function Home() {
                   }}
                 >
                   <Stack direction="row" justifyContent="space-between" alignItems="center" height="22px">
-                    <Typography variant="body1" sx={{ fontSize: "12px", color: "#303030" }}>使用数：2.3万</Typography>
+                    <Typography variant="body1" sx={{ fontSize: "12px", color: "#303030" }}>使用数：{item.usageCount}</Typography>
                     <Typography variant="body1" sx={{ fontSize: "12px", color: "#666" }}>
                       {item.isDefault
                         ? "@系统"
@@ -240,7 +217,7 @@ function Home() {
         >
           {
             characters?.map((item: any) => (
-              <Box
+              item.isDefault && <Box
                 key={item.id}
                 sx={{
                   width: "280px",
@@ -251,7 +228,7 @@ function Home() {
                   <Box>
                     <Stack direction="row">
                       <Box>
-                        <Avatar src={getImg(item.id)} variant="square" sx={{ width: 48, height: 48, borderRadius: "6px" }}></Avatar>
+                        <Avatar src={item.avatar} variant="square" sx={{ width: 48, height: 48, borderRadius: "6px" }}></Avatar>
                       </Box>
                       <Box marginLeft="10px">
                         <Typography variant="body1" sx={{ fontSize: "14px", color: "#303030" }}>{item.name}</Typography>
@@ -272,12 +249,25 @@ function Home() {
                           lineHeight: 1.4,
                           color: "#303030",
                           cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
                           '&:hover': {
                             backgroundColor: '#dedede'
                           }
                         }}
                         onClick={() => goChatWithText(item, question)}
-                      >{question}</Box>
+                      >
+                        <Box
+                          sx={{
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                          }}
+                          title={question}
+                        >{question}</Box>
+                      </Box>
                     ))
                   }
                 </Stack>

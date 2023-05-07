@@ -10,14 +10,6 @@ import { CreateCharacterModal } from "../../components/CreateCharacterModal";
 import BorderColorIcon from '@mui/icons-material/BorderColor';
 import DeleteIcon from "@mui/icons-material/Delete";
 import localForage from "localforage";
-import a1 from '../../avatar/1.jpeg'
-import a2 from '../../avatar/2.jpeg'
-import a3 from '../../avatar/3.jpeg'
-import a4 from '../../avatar/4.jpeg'
-import a5 from '../../avatar/5.jpeg'
-import a6 from '../../avatar/6.jpeg'
-import a7 from '../../avatar/7.jpeg'
-import a8 from '../../avatar/8.jpeg'
 
 function My() {
   const navigate = useNavigate()
@@ -28,23 +20,8 @@ function My() {
   const [showCreateCharacterModal, setShowCreateCharacterModal] = useState(false);
   const [curCharacter, setCurCharacter] = useState<any>();
 
-  const getImg = (id: string) => {
-    const imgMap: any = {
-      21: a1,
-      97: a2,
-      55: a3,
-      58: a4,
-      59: a5,
-      87: a6,
-      93: a7,
-      101: a8,
-    }
-
-    return imgMap[id] || null;
-  }
-
   const { data: characters, refetch: refetchCharacter } = useQuery(
-    ["character", token],
+    ["my-character", token],
     () => characterApi.getCharacters(),
     {
       enabled: !!token,
@@ -146,7 +123,7 @@ function My() {
                       onClick={() => goChat(item)}
                     >
                       <Box>
-                        <Avatar src={getImg(item.id)} variant="square" sx={{ width: 108, height: 108, borderRadius: "10px" }}></Avatar>
+                        <Avatar src={item.avatar} variant="square" sx={{ width: 108, height: 108, borderRadius: "10px" }}></Avatar>
                       </Box>
                       <Box
                         sx={{
@@ -177,7 +154,7 @@ function My() {
                         }}
                       >
                         <Stack direction="row" justifyContent="space-between" alignItems="center" height="22px">
-                          <Typography variant="body1" sx={{ fontSize: "12px", color: "#303030" }}>使用数：2.3万</Typography>
+                          <Typography variant="body1" sx={{ fontSize: "12px", color: "#303030" }}>使用数：{item.usageCount}</Typography>
                           <Typography variant="body1" sx={{ fontSize: "12px", color: "#666" }}>
                             {item.isDefault
                               ? "@系统"
