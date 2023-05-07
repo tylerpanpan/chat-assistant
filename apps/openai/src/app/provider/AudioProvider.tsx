@@ -117,17 +117,17 @@ export const AudioProvider = ({ children }: { children: any }) => {
    * if sentence is less 20 chars, merge it with the next sentence
    */
   const splitText = (text: string) => {
-    const sentences = text.match(/[^.!?。！？]+[.!?。！？]/g);
+    const sentences = text.match(/[^.!?。！？]+([.!?。！？]|$)/g);
     if (!sentences) {
       return [text];
     }
     for (let i = 0; i < sentences.length; i++) {
       if (sentences[i].length < 20) {
-        sentences[i + 1] = sentences[i] + sentences[i + 1];
-        sentences.splice(i, 1);
-        i--;
+        sentences[i] = sentences[i] + (sentences[i + 1] || "");
+        sentences.splice(i + 1, 1);
       }
     }
+    console.info("sentences", sentences)
     return sentences;
   };
 

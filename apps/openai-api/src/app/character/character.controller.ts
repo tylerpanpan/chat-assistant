@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, UseGuards } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { CharacterService } from "./character.service";
@@ -32,6 +32,15 @@ export class CharacterController {
     @Req() { user }
   ) {
     return this.characterService.getCharacters(user);
+  }
+
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Get('/recent_used')
+  recentUsed(
+    @Query('count') count: number,
+    @Req() { user }
+  ) {
+    return this.characterService.getRecentUsedCharacters(user,count);
   }
 
   @UseGuards(AuthGuard('jwt'), RolesGuard)
