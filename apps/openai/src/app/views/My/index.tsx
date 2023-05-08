@@ -237,7 +237,7 @@ function My() {
         )
       }
       {
-        userInfo?.type === 'guest' && (
+        !userInfo?.username && (
           <Button variant="outlined" size="small" onClick={handleLogin} sx={{ marginTop: "10px" }}>登录/注册</Button>
         )
       }

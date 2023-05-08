@@ -28,6 +28,10 @@ const ChatInsert = ({
     }
   };
 
+  const clickToSend = () => {
+    handleSend(text);
+  }
+
   return (
     <>
       <Box mx={2} my={1.5} position="relative">
@@ -76,7 +80,7 @@ const ChatInsert = ({
           >
             <Button
               variant="contained"
-              onClick={() => handleSend()}
+              onClick={() => clickToSend()}
               disabled={!text || sending}
               startIcon={sending ? <CircularProgress size="16px" /> : <SendIcon />}
             >发送</Button>

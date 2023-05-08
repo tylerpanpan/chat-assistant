@@ -447,7 +447,7 @@ export function Chat() {
                     充值
                   </Typography>
                 </Box>}
-                <Box>
+                <Box flex={1}>
                   <Stack sx={{minHeight: '60px'}} direction="column" justifyContent="center" alignItems="center">
                     <Typography fontWeight="500">
                       {curCharacter?.name || ""}
