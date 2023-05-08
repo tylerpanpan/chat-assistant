@@ -42,6 +42,11 @@ function My() {
     navigate(`/chat?cid=${value.id}`)
   }
 
+  const handleCharacterCreated = () => {
+    setShowCreateCharacterModal(false);
+    refetchCharacter();
+  };
+
   const handleEditCharacter = (event: any, data: any) => {
     event.stopPropagation();
     setCurCharacter(data);
@@ -246,6 +251,7 @@ function My() {
       <CreateCharacterModal
         open={showCreateCharacterModal}
         character={curCharacter}
+        onCreated={handleCharacterCreated}
         onClose={() => {
           setShowCreateCharacterModal(false)
           setCurCharacter(null)

@@ -77,6 +77,7 @@ function Home() {
       showLogin();
       return;
     }
+    setCurCharacter(null);
     setShowCreateCharacterModal(true);
   }
 

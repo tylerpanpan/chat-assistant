@@ -6,21 +6,19 @@ import {
   DialogProps,
   DialogTitle,
   FormControl,
-  FormControlLabel,
   FormLabel,
   MenuItem,
-  Radio,
-  RadioGroup,
-  Select,
   Slider,
+  Stack,
   TextField,
   Typography,
 } from "@mui/material";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import useAPI from "../../hooks/useAPI";
 import { useFeedback } from "../Feedback";
-import UploadView from "../UploadAvatarView";
 import { useFormik } from "formik";
+import { UploadAvatar } from "../Upload/avatar"
+
 interface CreateCharacterModalProps extends DialogProps {
   character?: any;
   onCreated?: () => void;
@@ -99,25 +97,26 @@ export function CreateCharacterModal({
 
   }, [character]);
 
+  const avatarChange = (url: string) => {
+    formik.setValues(values => ({...values, avatar: url}));
+  }
+
   return (
     <Dialog {...props}>
       <DialogTitle>{character?.name ? "角色编辑" : "创建角色"}</DialogTitle>
       <DialogContent>
         <Box component="form" py={1} onSubmit={formik.handleSubmit}>
-          {/* <UploadView 
-            filePath={formik.values.avatar}
-            onValueChange={(value) => {
-              formik.setFieldValue("avatar", value)
-            }}
-          /> */}
-          <TextField
-            sx={{ marginTop: "12px" }}
-            label="角色名"
-            fullWidth
-            name="name"
-            value={formik.values.name}
-            onChange={formik.handleChange}
-          />
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <UploadAvatar name="avatar" value={formik.values.avatar} onChange={avatarChange} />
+            <TextField
+              sx={{ marginTop: "12px" }}
+              label="角色名"
+              fullWidth
+              name="name"
+              value={formik.values.name}
+              onChange={formik.handleChange}
+            />
+          </Stack>
           <TextField
             sx={{ marginTop: "12px" }}
             label="角色定义"
@@ -140,7 +139,7 @@ export function CreateCharacterModal({
               <FormControlLabel value={1} control={<Radio />} label="中"/>
               <FormControlLabel value={2} control={<Radio />} label="高"/>
             </RadioGroup> */}
-            <Slider 
+            <Slider
               name="temperature"
               value={formik.values.temperature}
               onChange={(_, value) => {
@@ -153,7 +152,6 @@ export function CreateCharacterModal({
                 {
                   value: 0.5,
                   label: '低',
-                  
                 },
                 {
                   value: 1,
@@ -162,11 +160,10 @@ export function CreateCharacterModal({
                 {
                   value: 1.5,
                   label: '高',
-                }, 
+                },
               ]}
-              />
+            />
           </FormControl>
-          
           <br></br>
           <FormControl sx={{marginTop: '12px'}} fullWidth>
             <FormLabel>重复性 <Typography variant="caption">低（更多重复），中，高（很少重复，尝试新词）</Typography></FormLabel>
@@ -175,7 +172,7 @@ export function CreateCharacterModal({
               <FormControlLabel value={0} control={<Radio />} label="中"/>
               <FormControlLabel value={2} control={<Radio />} label="高"/>
             </RadioGroup> */}
-            <Slider 
+            <Slider
               name="frequencyPenalty"
               value={formik.values.frequencyPenalty}
               onChange={(_, value) => {
@@ -196,11 +193,10 @@ export function CreateCharacterModal({
                 {
                   value: 0.3,
                   label: '高',
-                }, 
+                },
               ]}
             />
           </FormControl>
-          
 
           <Button
             disabled={!formik.values.name || !formik.values.definition}

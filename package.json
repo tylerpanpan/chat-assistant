@@ -36,6 +36,7 @@
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.0",
     "clsx": "^1.2.1",
+    "compressorjs": "^1.2.1",
     "express": "^4.18.2",
     "filepond": "^4.30.4",
     "filepond-plugin-image-crop": "^2.0.6",

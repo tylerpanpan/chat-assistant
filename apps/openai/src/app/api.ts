@@ -116,6 +116,10 @@ export class UserAPI extends BaseAPI {
     return this.post<any>('/api/ip_login', {})
   }
 
+  getOssSign() {
+    return this.post<any>('/api/upload/oss_signature', {})
+  }
+
 }
 
 export class CharacterAPI extends BaseAPI {
