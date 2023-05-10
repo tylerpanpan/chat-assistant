@@ -9,6 +9,7 @@ import {
   MenuItem,
   ListItemIcon,
   ListItemText,
+  Button,
 } from "@mui/material";
 import { useQuery } from "react-query";
 import { useAuth } from "../../provider/AuthProvider";
@@ -475,11 +476,9 @@ export function Chat() {
                 </Box>
                 <Box height="42px" flexShrink={0}>
                   {token && userInfo?.username && (
-                    <Tooltip title="分享得积分">
-                      <IconButton sx={{ border: '1px solid #dedede' }} onClick={handleShare}>
-                        <ShareOutlinedIcon />
-                      </IconButton>
-                    </Tooltip>
+                    <Button onClick={handleShare}>
+                      推荐得积分
+                    </Button>
                   )}
                   {token && chat && userInfo?.username && (
                     <Tooltip title="更多操作">

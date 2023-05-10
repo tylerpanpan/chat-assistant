@@ -191,6 +191,7 @@ export function ChatContent({
                   }
 									<Box
 										className="chat-wrap"
+                    maxWidth="100%"
                     justifySelf={chats[virtualRow.index].role === "user" ? "flex-end" : "flex-start"}
 										bgcolor={chats[virtualRow.index].role === "user" ? "#e7f8ff" : "rgba(0, 0, 0, .05)"}
 										border="1px solid #dedede"

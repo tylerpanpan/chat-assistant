@@ -1,5 +1,5 @@
 import { useImperativeHandle, useState, forwardRef } from "react";
-import { Box, Button, CircularProgress, IconButton, InputBase, Stack } from "@mui/material";
+import { Box, Button, CircularProgress, InputBase, Stack } from "@mui/material";
 import SendIcon from "@mui/icons-material/Send";
 import ShareIcon from '@mui/icons-material/Share';
 import CloseIcon from '@mui/icons-material/Close';
@@ -112,12 +112,12 @@ const ChatInsert = ({
                 bgcolor="#fff"
               >
                 <Stack height="100%" direction="row" alignItems="center" justifyContent="center" spacing={4}>
-                  <IconButton sx={{ border: '1px solid #dedede' }} onClick={shareMultiple}>
-                    <ShareIcon />
-                  </IconButton>
-                  <IconButton sx={{ border: '1px solid #dedede' }} onClick={closeMultiple}>
-                    <CloseIcon />
-                  </IconButton>
+                  <Button variant="contained" startIcon={<ShareIcon fontSize="small" />} onClick={shareMultiple}>
+                    分享到社区
+                  </Button>
+                  <Button variant="outlined" onClick={closeMultiple}>
+                    取消
+                  </Button>
                 </Stack>
               </Box>
             )
