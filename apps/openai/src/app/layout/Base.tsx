@@ -2,7 +2,7 @@ import { Box, Stack, Typography } from "@mui/material";
 import { Outlet, useNavigate } from 'react-router-dom'
 import HomeIcon from '@mui/icons-material/Home';
 import QuestionAnswerIcon from '@mui/icons-material/QuestionAnswer';
-// import PeopleIcon from '@mui/icons-material/People';
+import PeopleIcon from '@mui/icons-material/People';
 import PersonIcon from '@mui/icons-material/Person';
 // import ManageSearchIcon from '@mui/icons-material/ManageSearch';
 
@@ -97,12 +97,12 @@ function BaseLayout () {
                     对话
                   </Typography>
                 </Box>
-                {/* <Box onClick={() => jumpTo('/community')} sx={{ cursor: 'pointer', color: "#555", '&:hover': { color: '#1976d2'}, marginBottom: { xs: 0, sm: '24px'} }}>
+                <Box onClick={() => jumpTo('/community')} sx={{ cursor: 'pointer', color: "#555", '&:hover': { color: '#1976d2'}, marginBottom: { xs: 0, sm: '24px'} }}>
                   <PeopleIcon />
                   <Typography variant="caption" display="block" mt={-1}>
                     社区
                   </Typography>
-                </Box> */}
+                </Box>
                 {/* <Box sx={{ cursor: 'pointer', color: "#555", '&:hover': { color: '#1976d2'} }}>
                   <ManageSearchIcon />
                   <Typography variant="caption" display="block" mt={-1}>

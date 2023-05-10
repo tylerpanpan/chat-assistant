@@ -1,20 +1,28 @@
 import { useImperativeHandle, useState, forwardRef } from "react";
-import { Box, Button, CircularProgress, InputBase, Stack } from "@mui/material";
+import { Box, Button, CircularProgress, IconButton, InputBase, Stack } from "@mui/material";
 import SendIcon from "@mui/icons-material/Send";
+import ShareIcon from '@mui/icons-material/Share';
+import CloseIcon from '@mui/icons-material/Close';
 
 interface ChatInsertProps {
   ref: any;
   presetQuestions: any[];
   sending: boolean;
-  handleSend: (text?: string) => void;
+  isMultiple?: boolean;
   curCharacter?: any;
+  handleSend: (text?: string) => void;
+  onMultiChange?: (boo: boolean) => void;
+  shareContent?: () => void;
 }
 
 const ChatInsert = ({
   presetQuestions,
   sending,
-  handleSend,
+  isMultiple,
   curCharacter,
+  handleSend,
+  onMultiChange,
+  shareContent
 }: ChatInsertProps, ref: any) => {
   const [text, setText] = useState("");
 
@@ -32,10 +40,18 @@ const ChatInsert = ({
     handleSend(text);
   }
 
+  const closeMultiple = () => {
+    onMultiChange?.(false)
+  }
+
+  const shareMultiple = () => {
+    shareContent?.()
+  }
+
   return (
     <>
       <Box mx={2} my={1.5} position="relative">
-        {presetQuestions.length > 0 && curCharacter?.recommendEnable && <Box pt={1} borderTop="1px solid #dedede">
+        {presetQuestions.length > 0 && curCharacter?.recommendEnable && !isMultiple && <Box pt={1} borderTop="1px solid #dedede">
           <Stack direction="row" sx={{
             overflowY: 'auto',
             flexFlow: {
@@ -85,6 +101,27 @@ const ChatInsert = ({
               startIcon={sending ? <CircularProgress size="16px" /> : <SendIcon />}
             >发送</Button>
           </Box>
+          {
+            isMultiple && (
+              <Box
+                position="absolute"
+                left="0"
+                right="0"
+                top="0"
+                bottom="0"
+                bgcolor="#fff"
+              >
+                <Stack height="100%" direction="row" alignItems="center" justifyContent="center" spacing={4}>
+                  <IconButton sx={{ border: '1px solid #dedede' }} onClick={shareMultiple}>
+                    <ShareIcon />
+                  </IconButton>
+                  <IconButton sx={{ border: '1px solid #dedede' }} onClick={closeMultiple}>
+                    <CloseIcon />
+                  </IconButton>
+                </Stack>
+              </Box>
+            )
+          }
         </Stack>
       </Box>
     </>

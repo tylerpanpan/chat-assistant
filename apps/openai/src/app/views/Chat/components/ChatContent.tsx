@@ -1,4 +1,4 @@
-import { Box, IconButton, Skeleton, Stack, Typography } from "@mui/material"
+import { Box, Checkbox, IconButton, Skeleton, Stack, Typography } from "@mui/material"
 import { useEffect, useRef, useState } from "react";
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useFeedback } from "../../../components/Feedback";
@@ -14,10 +14,14 @@ import "highlight.js/styles/atom-one-dark.css";
 
 interface ChatContentProps {
   chats: any[];
-  userInfo: any;
+  userInfo?: any;
 	character?: any;
+  isShare?: boolean;
+  isMultiple?: boolean;
 	onRecharge: () => void;
   onShare?: () => void;
+  onMultiChange?: (boo: boolean) => void;
+  onSelectedIndexs?: (arr: any[]) => void
 }
 
 function highlightBlock(str: string, lang?: string) {
@@ -43,8 +47,12 @@ export function ChatContent({
 	chats,
   userInfo,
 	character,
+  isShare,
+  isMultiple,
 	onRecharge,
-  onShare
+  onShare,
+  onMultiChange,
+  onSelectedIndexs
 }: ChatContentProps) {
 	const { showToast } = useFeedback();
 	const { showLogin } = useAuth();
@@ -115,6 +123,25 @@ export function ChatContent({
 		}
 	},[chats, currentPlayIndex, playedText]);
 
+  // 多选内容
+  const [contentSelectedIndexs, setContentSelectedIndexs] = useState<any[]>([]);
+
+  const multipleSelect = () => {
+    onMultiChange?.(true);
+  }
+
+  const manageSelectedIndexs = (idx: number) => {
+    const index = contentSelectedIndexs.indexOf(idx);
+    const arr = [...contentSelectedIndexs];
+    if (index !== -1) {
+      arr.splice(index, 1);
+    } else {
+      arr.push(idx);
+    }
+    setContentSelectedIndexs(arr);
+    onSelectedIndexs?.(arr)
+  }
+
 	return (
 		<>
 			<Box ref={chatEndRef} p={2} height="100%" overflow={"scroll"}>
@@ -150,14 +177,21 @@ export function ChatContent({
 									data-index={virtualRow.index}
 									ref={virtualizer.measureElement}
 									key={virtualRow.key}
-									display={'flex'}
+									display={'grid'}
+                  gridTemplateColumns={isMultiple ? "50px auto" : "100%"}
 									py={2.5}
-									ml={chats[virtualRow.index].role === "user" ? "auto" : 0}
 									mr={chats[virtualRow.index].role === "user" ? 0 : "15%"}
 								>
+                  {
+                    isMultiple && (
+                      <Box alignSelf="center">
+                        <Checkbox value={virtualRow.index} onChange={() => manageSelectedIndexs(virtualRow.index)} />
+                      </Box>
+                    )
+                  }
 									<Box
 										className="chat-wrap"
-										width={'100%'}
+                    justifySelf={chats[virtualRow.index].role === "user" ? "flex-end" : "flex-start"}
 										bgcolor={chats[virtualRow.index].role === "user" ? "#e7f8ff" : "rgba(0, 0, 0, .05)"}
 										border="1px solid #dedede"
 										borderRadius="10px"
@@ -181,7 +215,7 @@ export function ChatContent({
 												className="chat-actions"
 											>
 												<Typography variant="caption" className="action-btn" onClick={() => copyText(chats[virtualRow.index])}>复制</Typography>
-												{/* <Typography variant="caption" className="action-btn" onClick={() => handleDeleteChat(chats[virtualRow.index])}>删除</Typography> */}
+												{!isShare && userInfo?.type !== 'guest' && <Typography variant="caption" className="action-btn" onClick={() => multipleSelect()}>多选</Typography>}
 											</Box>
 										)}
 										{chats[virtualRow.index].loading ? (

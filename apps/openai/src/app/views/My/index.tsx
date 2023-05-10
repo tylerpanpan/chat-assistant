@@ -159,8 +159,8 @@ function My() {
                         }}
                       >
                         <Stack direction="row" justifyContent="space-between" alignItems="center" height="22px">
-                          <Typography variant="body1" sx={{ fontSize: "12px", color: "#303030" }}>使用数：{item.usageCount}</Typography>
-                          <Typography variant="body1" sx={{ fontSize: "12px", color: "#666" }}>
+                          <Typography component={'span'} variant="body1" sx={{ fontSize: "12px", color: "#303030" }}>使用数：{item.usageCount}</Typography>
+                          <Typography component={'span'} variant="body1" sx={{ fontSize: "12px", color: "#666" }}>
                             {item.isDefault
                               ? "@系统"
                               : (

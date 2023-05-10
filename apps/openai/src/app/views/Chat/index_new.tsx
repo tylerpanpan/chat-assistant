@@ -29,7 +29,7 @@ import { getUrlParams } from "../../utils";
 import './index.scss';
 
 export function Chat() {
-  const { chatApi, userApi, recommendApi } = useAPI();
+  const { chatApi, userApi, recommendApi, shareAPI } = useAPI();
   const { token, showLogin } = useAuth();
   const { showDialog, showToast } = useFeedback();
   const { stop } = useAudio()
@@ -42,6 +42,8 @@ export function Chat() {
   const [chat, setChat] = useState<any>();
   const [chats, setChats] = useState<{ role: "user" | "assistant" | "recharge" | "guest" | "gpt4limit"; content: string; loading?: boolean }[]>([]);
   const [showChatList, setShowChatList] = useState(false);
+  const [isMultiple, setIsMultiple] = useState<boolean>(false);
+  const [selectedIndexs, setSelectedIndexs] = useState<any[]>([]);
 
   // 更多操作
   const [allChats, setAllChats] = useState<any[]>([])
@@ -422,6 +424,22 @@ export function Chat() {
     showToast("分享链接已拷贝到剪贴板");
   }
 
+  // 分享到社区
+  const shareContent = () => {
+    if (selectedIndexs.length) {
+      shareAPI
+        .createShare({
+          chatId: chat?.id,
+          messageIndexs: selectedIndexs.sort((a, b) => a - b)
+        })
+        .then(() => {
+          setIsMultiple(false);
+          showToast("已分享到社区");
+        })
+        .catch((err) => {});
+    }
+  }
+
   return (
     <>
       <Box height="100%">
@@ -504,9 +522,9 @@ export function Chat() {
             {/* 所有会话消息 */}
             {showChatList && <ChatList allChats={allChats} onChoose={handleChooseChat} onDelete={handleDeleteChat} />}
             {/* 当前会话内容 */}
-            {!showChatList && <ChatContent character={curCharacter} chats={chats} userInfo={userInfo} onRecharge={() => setRechargeModalOpen(true)} onShare={handleShare} />}
+            {!showChatList && <ChatContent character={curCharacter} chats={chats} userInfo={userInfo} isMultiple={isMultiple} onMultiChange={(boo) => setIsMultiple(boo)} onSelectedIndexs={(arr) => setSelectedIndexs(arr)} onRecharge={() => setRechargeModalOpen(true)} onShare={handleShare} />}
             {/* 推荐语及输入框 */}
-            {!showChatList && <ChatInsert ref={sendRef} presetQuestions={presetQuestions} sending={sending} curCharacter={curCharacter} handleSend={handleSend} />}
+            {!showChatList && <ChatInsert ref={sendRef} presetQuestions={presetQuestions} sending={sending} curCharacter={curCharacter} isMultiple={isMultiple} onMultiChange={(boo) => setIsMultiple(boo)} handleSend={handleSend} shareContent={shareContent} />}
           </Stack>
         </Box>
         <RechargeModal open={rechargeModalOpen} onClose={()=> setRechargeModalOpen(false)}/>

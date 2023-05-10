@@ -7,6 +7,8 @@ const Chat = loadable(() => import('../views/Chat/index_new'));
 const ChatList = loadable(() => import('../views/Chat/list'));
 const Community = loadable(() => import('../views/Community'));
 const My = loadable(() => import('../views/My'));
+
+const Share = loadable(() => import('../views/Share'));
 const Iframe = loadable(() => import('../views/Iframe'));
 
 const router = createBrowserRouter(
@@ -18,6 +20,8 @@ const router = createBrowserRouter(
         <Route path="chatList" element={<ChatList />} />
         <Route path="community" element={<Community />} />
         <Route path="my" element={<My />} />
+
+        <Route path="share" element={<Share />} />
       </Route>
       <Route path="/iframe" element={<Iframe />}></Route>
     </Route>

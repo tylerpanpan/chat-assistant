@@ -87,6 +87,7 @@ export class API extends BaseAPI {
   orderApi: OrderAPI;
   speechApi: SpeechAPI;
   recommendApi: RecommendAPI;
+  shareAPI: ShareAPI;
   constructor(token?: string, host?: string, logout?: () => void) {
     super(axios, host)
     this.userApi = new UserAPI(axios, host, token, logout)
@@ -95,6 +96,7 @@ export class API extends BaseAPI {
     this.orderApi = new OrderAPI(axios, host, token, logout)
     this.speechApi = new SpeechAPI(axios, host, token, logout)
     this.recommendApi = new RecommendAPI(axios, host, token, logout)
+    this.shareAPI = new ShareAPI(axios, host, token, logout)
   }
 }
 
@@ -209,3 +211,20 @@ export class RecommendAPI extends BaseAPI {
   }
 }
 
+export class ShareAPI extends BaseAPI {
+  createShare(data: any) {
+    return this.post<string>('/api/share', data, {}, true)
+  }
+
+  getShareList() {
+    return this.get<any>('/api/share')
+  }
+
+  getShareDetail(id: number) {
+    return this.get<any>(`/api/share/${id}`)
+  }
+
+  likeShare(id: number) {
+    return this.get<any>(`/api/share/like/${id}`)
+  }
+}
