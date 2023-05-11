@@ -12,7 +12,7 @@ import '../Chat/index.scss';
 
 function Iframe() {
   const { chatApi, userApi, recommendApi } = useAPI();
-  const { token, showLogin, login } = useAuth();
+  const { token, showLogin } = useAuth();
   const { showToast } = useFeedback();
   const [characterId, setCharacterId] = useState<null | number>(21);
   const sendRef = useRef();
@@ -22,20 +22,6 @@ function Iframe() {
   const [presetQuestions, setPresetQuestions] = useState<any[]>([]);
   const [chat, setChat] = useState<any>();
   const [chats, setChats] = useState<{ role: "user" | "assistant" | "recharge" | "guest" | "gpt4limit"; content: string; loading?: boolean }[]>([]);
-
-  // 判断是否是游客，新用户
-  useQuery(
-    ["ipLogin"],
-    () => userApi.ipLogin(),
-    {
-      enabled: !localStorage.getItem('__app_token'),
-      refetchOnWindowFocus: false,
-      onSuccess: (data) => {
-        localForage.setItem('character-chat', null)
-        login(data.access_token, data.user)
-      },
-    }
-  );
 
   const { data: userInfo, refetch: refetchUserInfo } = useQuery(
     ["userinfo", token],

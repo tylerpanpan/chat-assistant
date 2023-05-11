@@ -15,7 +15,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 function Home() {
   const navigate = useNavigate()
   const { characterApi, userApi } = useAPI();
-  const { token, showLogin, login } = useAuth();
+  const { token, showLogin } = useAuth();
   const { showDialog, showToast } = useFeedback();
   const [showCreateCharacterModal, setShowCreateCharacterModal] = useState(false);
   const [curCharacter, setCurCharacter] = useState<any>();
@@ -31,19 +31,6 @@ function Home() {
       }
     }
   }, [])
-
-  useQuery(
-    ["ipLogin"],
-    () => userApi.ipLogin(),
-    {
-      enabled: !localStorage.getItem('__app_token'),
-      refetchOnWindowFocus: false,
-      onSuccess: (data) => {
-        localForage.setItem('character-chat', null)
-        login(data.access_token, data.user)
-      },
-    }
-  );
 
   const { data: characters, refetch: refetchCharacter } = useQuery(
     ["character", token],

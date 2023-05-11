@@ -42,7 +42,7 @@ const drawerWidth = 320;
 
 export function Chat() {
   const { characterApi, chatApi, userApi, recommendApi } = useAPI();
-  const { token, showLogin, login, logout } = useAuth();
+  const { token, showLogin, logout } = useAuth();
   const { showDialog, showToast } = useFeedback();
   const [characterId, setCharacterId] = useState<null | number>();
   const [curCharacter, setCurCharacter] = useState<any>();
@@ -78,19 +78,6 @@ export function Chat() {
       }
     }
   }, [])
-  
-  useQuery(
-    ["ipLogin"],
-    () => userApi.ipLogin(),
-    {
-      enabled: !localStorage.getItem('__app_token'),
-      refetchOnWindowFocus: false,
-      onSuccess: (data) => {
-        localForage.setItem('character-chat', null)
-        login(data.access_token, data.user)
-      },
-    }
-  );
 
   const { data: userInfo, refetch: refetchUserInfo } = useQuery(
     ["userinfo", token],
@@ -104,7 +91,7 @@ export function Chat() {
   useQuery(
     ["chat/last", token, characterId],
     () => chatApi.lastChat(characterId),
-    { 
+    {
       enabled: !!token && !!characterId,
       refetchOnWindowFocus: false,
       onSuccess(data) {
@@ -123,7 +110,7 @@ export function Chat() {
   const { data: characters, refetch: refetchCharacter } = useQuery(
     ["character", token],
     () => characterApi.getCharacters(),
-    { 
+    {
       enabled: !!token,
       refetchOnWindowFocus: false
     }
@@ -245,7 +232,7 @@ export function Chat() {
         loading: true,
       }
     ]);
-    
+
     if(currentCharacter && currentCharacter.recommendEnable && (text || question || "").length >= 6) {
       recommendQuestion(currentCharacter.id, text || question)
     }
@@ -292,7 +279,7 @@ export function Chat() {
           showToast('现在业务繁忙，请稍后再试')
           return;
         }
-      
+
         const stream = new ReadableStream({
           start(controller) {
             function push() {
@@ -315,7 +302,7 @@ export function Chat() {
         textStream.read().then(function processText({ done, value }) {
           if (done) {
             console.log('Stream complete', streamText);
-           
+
             setSending(false);
             refetchUserInfo();
             return;
@@ -670,7 +657,7 @@ export function Chat() {
                         {currentCharacter?.name || ""}
                       </Typography>
                       {currentCharacter?.description && <Typography sx={{lineHeight: 1.2,marginTop: '5px'}} variant="caption">{currentCharacter?.description}</Typography>}
-                    
+
                     </Stack>
                   </Box>
                   <Box height="42px" flexShrink={0}>
@@ -727,12 +714,12 @@ export function Chat() {
               {!showChatList && <Box mx={2} my={1.5} position="relative">
                 {presetQuestions.length > 0 && !showChatList && characters?.find((item: any)=> item.id === characterId)?.recommendEnable && <Box pt={1} borderTop="1px solid #dedede">
                   <Stack direction="row" sx={{
-                    overflowY: 'auto', 
+                    overflowY: 'auto',
                     flexFlow: {
                       sm: 'row wrap',
                       xs: 'row nowrap'
                     },
-                
+
                   }}>
                     {
                       presetQuestions.map((question, index) => (

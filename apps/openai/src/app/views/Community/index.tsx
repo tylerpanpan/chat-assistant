@@ -6,17 +6,20 @@ import ThumbUpAltIcon from '@mui/icons-material/ThumbUpAlt';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import useAPI from "../../hooks/useAPI";
 import { useFeedback } from "../../components/Feedback";
+import { useAuth } from "../../provider/AuthProvider";
 import moment from "moment";
 
 function Community() {
   const navigate = useNavigate()
+  const { token, user, showLogin } = useAuth();
   const { shareAPI } = useAPI();
   const { showToast } = useFeedback();
 
   const { data: shareList, refetch: refetchShareList } = useQuery(
-    ["all-share"],
+    ["all-share", token],
     () => shareAPI.getShareList(),
     {
+      enabled: !!token,
       refetchOnWindowFocus: false
     }
   );
@@ -24,17 +27,21 @@ function Community() {
   // 点赞
   const handleLike = (event:any, value: any) => {
     event.stopPropagation();
-    shareAPI
-      .likeShare(value.id)
-      .then(res => {
-        refetchShareList();
-        if (!value.liked) {
-          showToast("点赞成功");
-        } else {
-          showToast("点赞取消");
-        }
-      })
-      .catch(err => {})
+    if (!user?.username) {
+      showLogin()
+    } else {
+      shareAPI
+        .likeShare(value.id)
+        .then(res => {
+          refetchShareList();
+          if (!value.liked) {
+            showToast("点赞成功");
+          } else {
+            showToast("点赞取消");
+          }
+        })
+        .catch(err => {})
+    }
   }
 
   // 进入详情页

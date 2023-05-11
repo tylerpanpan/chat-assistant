@@ -15,6 +15,8 @@ import { Stack } from "@mui/system";
 import { useState } from "react";
 import useAPI from "../../hooks/useAPI";
 import { useFeedback } from "../Feedback";
+import { useAuth } from "../../provider/AuthProvider";
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 
 const prices = [
   {
@@ -40,6 +42,7 @@ const prices = [
 ];
 
 export function RechargeModal({ ...props }: DialogProps) {
+  const { user } = useAuth()
   const { orderApi } = useAPI();
   const { showToast } = useFeedback();
   const theme = useTheme();
@@ -58,6 +61,31 @@ export function RechargeModal({ ...props }: DialogProps) {
       div.getElementsByTagName("form")[0].submit();
     });
   };
+
+  const copyLink = () => {
+    if (navigator.clipboard) {
+      new Promise((resolve, reject) => {
+        navigator.clipboard.writeText(`https://grzl.ai/?invite=${user?.id}`)
+          .then(() => {
+            resolve('Copied to clipboard!');
+            showToast("分享链接已拷贝到剪贴板");
+          })
+          .catch((error) => {
+            reject(error);
+          });
+      });
+    } else {
+      const dummy = document.createElement("textarea");
+      document.body.appendChild(dummy);
+      dummy.value = `https://grzl.ai/?invite=${user?.id}`;
+      dummy.tabIndex = -1;
+      dummy.focus();
+      dummy.select();
+      document.execCommand("copy");
+      document.body.removeChild(dummy);
+      showToast("分享链接已拷贝到剪贴板");
+    }
+  }
 
   return (
     <Dialog {...props}>
@@ -104,6 +132,10 @@ export function RechargeModal({ ...props }: DialogProps) {
           </Stack>
         </Box>
       </DialogContent>
+      <Stack direction="column" justifyContent="center" alignItems="center" spacing={1}>
+        <Typography sx={{textAlign: "center"}}>推荐得500积分</Typography>
+        <Typography sx={{color: "#303030"}}>{`https://grzl.ai/?invite=${user?.id}`} <ContentCopyIcon sx={{fontSize: '14px', marginLeft: '5px', cursor: 'pointer'}} onClick={copyLink} /></Typography>
+      </Stack>
       <DialogActions>
         <Button
           sx={{ margin: "10px 15px" }}

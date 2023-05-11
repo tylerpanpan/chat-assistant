@@ -13,10 +13,11 @@ import '../Chat/index.scss';
 
 function Share() {
   const { userApi, shareAPI } = useAPI();
-  const { token } = useAuth();
+  const { token, showLogin } = useAuth();
   const { showToast } = useFeedback();
   const [curCharacter, setCurCharacter] = useState<any>();
   const [chats, setChats] = useState<{ role: "user" | "assistant" | "recharge" | "guest" | "gpt4limit"; content: string; loading?: boolean }[]>([]);
+  const [isLiking, setIsLiking] = useState<boolean>(false);
 
   const { data: shareData, refetch: refetchShareData } = useQuery(
     ["share-detail"],
@@ -26,7 +27,15 @@ function Share() {
       refetchOnWindowFocus: false,
       onSuccess: (data) => {
         setCurCharacter(data.chat.character);
-        setChats(data.messages)
+        setChats(data.messages);
+        if (isLiking) {
+          setIsLiking(false);
+          if (data.liked) {
+            showToast("点赞成功");
+          } else {
+            showToast("点赞取消");
+          }
+        }
       },
     }
   );
@@ -42,17 +51,19 @@ function Share() {
 
   // 点赞
   const handleLike = () => {
-    shareAPI
-      .likeShare(shareData.id)
-      .then(res => {
-        refetchShareData();
-        if (!shareData.liked) {
-          showToast("点赞成功");
-        } else {
-          showToast("点赞取消");
-        }
-      })
-      .catch(err => {})
+    if (!userInfo?.username) {
+      showLogin()
+    } else {
+      setIsLiking(true);
+      shareAPI
+        .likeShare(shareData.id)
+        .then(() => {
+          refetchShareData();
+        })
+        .catch(() => {
+          setIsLiking(false);
+        })
+    }
   }
 
   return (
@@ -82,8 +93,8 @@ function Share() {
               </Stack>
             </Box>
             <Box height="42px" flexShrink={0}>
-              {token && userInfo?.username && (
-                <IconButton sx={{ border: '1px solid #dedede' }} onClick={handleLike}>
+              {token && (
+                <IconButton sx={{ border: '1px solid #dedede' }} disabled={isLiking} onClick={handleLike}>
                   {shareData?.liked ? <ThumbUpAltIcon /> : <ThumbUpOffAltIcon />}
                 </IconButton>
               )}

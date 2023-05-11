@@ -1,9 +1,9 @@
-import React, { FC, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useContext } from 'react';
-import { useNavigate } from 'react-router';
-import { useBlocker } from 'react-router/dist/lib/hooks';
 import { LoginModal } from '../components/LoginModal';
 import localForage from "localforage";
+import { useQuery } from "react-query";
+import useAPI from "../hooks/useAPI";
 export const STORE_TOKEN_KEY = '__app_token';
 export const STORE_USER_KEY = '__app_user';
 
@@ -25,6 +25,7 @@ const AuthContext = React.createContext<AuthContextType>({
 export const AuthProvider: React.FC<{ children?: React.ReactNode }> = ({
   children,
 }) => {
+  const { userApi } = useAPI();
   const [token, setToken] = useState<string>();
   const [user, setUser] = useState<any>();
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -43,24 +44,18 @@ export const AuthProvider: React.FC<{ children?: React.ReactNode }> = ({
     } catch (e) {}
   }, []);
 
-  useEffect(() => {
-    // const unlock = history.block((location) => {
-    //   // if (needAuth(location.pathname)) {
-    //   //   if (!token) {
-    //   //     showLogin((data) => {
-    //   //       if (data && data.token) {
-    //   //         // console.info(data);
-    //   //         login(data.token, data.user);
-    //   //       }
-    //   //     });
-    //   //     return false;
-    //   //   }
-    //   // }
-    // });
-    // return () => {
-    //   unlock();
-    // };
-  }, [token]);
+  useQuery(
+    ["ipLogin"],
+    () => userApi.ipLogin(),
+    {
+      enabled: !localStorage.getItem('__app_token'),
+      refetchOnWindowFocus: false,
+      onSuccess: (data) => {
+        localForage.setItem('character-chat', null)
+        login(data.access_token, data.user)
+      },
+    }
+  );
 
   const login = (token: string, user: any) => {
     setToken(token);
